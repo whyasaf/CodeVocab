@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CodeVocab</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='codevocablogohead.png') }}">
+</head>
+
+<body>
+
+    <div class="signature-footer">
+
+        <img src="{{ url_for('static', filename='whyasaf_logo.png') }}" alt="Whyasaf" class="sig-logo whyasaf-ozel">
+
+        <span class="sig-divider">|</span>
+
+        <img src="{{ url_for('static', filename='logo_marki.png') }}" alt="Marki" class="sig-logo mini">
+
+        <span class="sig-divider">|</span>
+
+        <span class="sig-text">CodeVocab 2026 ©</span>
+
+    </div>
+
+    <section id="landing-section" class="active">
+        <div class="center-content">
+            <div style="text-align: center; margin-bottom: 20px;">
+
+                <img src="{{ url_for('static', filename='codevocablogo_dep.png') }}" alt="CodeVocab Logo"
+                    style="height: 200px; width: auto; object-fit: contain;">
+
+            </div>
+            <button class="btn-primary pill pulse" onclick="showSection('mode-selection')">BAŞLA</button>
+        </div>
+    </section>
+
+    <section id="mode-selection">
+        <div class="back-nav" onclick="showSection('landing-section')">← Geri</div>
+        <div class="card-container">
+            <div class="mode-card hover-lift" onclick="startVocabHunter()">
+                <div class="icon">
+                    <img src="{{ url_for('static', filename='codevocablogohunt.png') }}" alt="İkon"
+                        style="width: 170px; height: 55px;">
+                </div>
+                <h2>Kelime Avcısı</h2>
+                <p style="font-size: 0.9rem; color: #777; margin-top: 10px;">Akademik ve günlük kullanım sıklığına göre
+                    filtrelenmiş kelime havuzu.</p>
+            </div>
+            <div class="mode-card hover-lift" onclick="startSmartAnalyzer()">
+                <div class="icon">
+                    <img src="{{ url_for('static', filename='codevocablaı.png') }}" alt="İkon"
+                        style="width: 170px; height: 40px;">
+                </div>
+                <h2>Cümle Analizi</h2>
+                <p style="font-size: 0.9rem; color: #777; margin-top: 10px;">Yapay zeka destekli asistan ile İngilizce
+                    pratik yap ve senaryo tabanlı öğren.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="vocab-hunter">
+        <div class="back-nav" onclick="showSection('mode-selection')">← Ana Menü</div>
+
+        <div class="vocab-container fade-in-up">
+            <div id="word-buttons" class="word-selection-row">
+                <button class="btn-word skeleton">...</button>
+                <button class="btn-word skeleton">...</button>
+                <button class="btn-word skeleton">...</button>
+            </div>
+
+            <div id="word-detail-card" class="detail-card hidden">
+                <div class="card-header">
+                    <h1 id="detail-word">Word</h1>
+                    <span id="detail-phonetic">/phonetic/</span>
+                </div>
+                <div class="tag-pink" id="detail-meaning">Turkish Meaning</div>
+
+                <div class="sentences-list">
+                    <div class="sentence-item">
+                        <span class="badge a1">A1</span>
+                        <p id="sent-a1">...</p>
+                    </div>
+                    <div class="sentence-item">
+                        <span class="badge b1">B1</span>
+                        <p id="sent-b1">...</p>
+                    </div>
+                    <div class="sentence-item">
+                        <span class="badge c1">C1</span>
+                        <p id="sent-c1">...</p>
+                    </div>
+                </div>
+
+                <div class="card-actions">
+                    <button class="btn-know" onclick="markKnown(window.currentWord)">Biliyorum</button>
+                    <button class="btn-secondary" onclick="startVocabHunter()">Sonraki</button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="smart-analyzer">
+        <div class="back-nav" onclick="showSection('mode-selection')">← Ana Menü</div>
+
+        <div class="chat-container">
+            <div id="chat-window" class="chat-window">
+                <div class="bubble ai fade-in">
+                    Merhaba! İngilizce bir cümle yaz, kontrol edeyim.
+                </div>
+            </div>
+
+            <div class="input-area">
+                <input type="text" id="chat-input" placeholder="Cümleni buraya yaz..." onkeypress="handleEnter(event)">
+                <button class="btn-send" onclick="sendMessage()">Analiz Et</button>
+            </div>
+        </div>
+    </section>
+
+    <script>
+        function showSection(id) {
+            document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+        }
+
+        async function startVocabHunter() {
+            showSection('vocab-hunter');
+            const card = document.querySelector('.detail-card');
+            if (card) {
+                card.classList.add('hidden');
+            }
+
+            const container = document.getElementById('word-buttons');
+            container.innerHTML = '<div class="loader"></div>';
+
+            const res = await fetch('/api/get_random_words');
+            const words = await res.json();
+
+            container.innerHTML = '';
+            words.forEach(word => {
+                const btn = document.createElement('button');
+                btn.className = 'btn-word';
+                btn.innerText = word;
+                btn.onclick = () => loadWordDetails(word, btn);
+                container.appendChild(btn);
+            });
+        }
+
+        async function loadWordDetails(word, btnElement) {
+            document.querySelectorAll('.btn-word').forEach(b => b.classList.remove('active'));
+            btnElement.classList.add('active');
+
+            const card = document.querySelector('.detail-card');
+            card.classList.remove('hidden');
+            card.classList.remove('card-known');
+
+            card.id = 'card-' + word;
+
+            card.querySelector('#detail-word').innerText = 'Yükleniyor...';
+            card.querySelector('#detail-meaning').innerText = '...';
+
+            const res = await fetch(`/api/word_details?word=${word}`);
+            const data = await res.json();
+
+            if (data.error) return;
+
+            card.querySelector('#detail-word').innerText = data.word;
+            card.querySelector('#detail-phonetic').innerText = data.phonetic || '';
+            card.querySelector('#detail-meaning').innerText = data.meaning_tr;
+
+            card.querySelector('#sent-a1').innerText = data.sentences.A1;
+            card.querySelector('#sent-b1').innerText = data.sentences.B1;
+            card.querySelector('#sent-c1').innerText = data.sentences.C1;
+
+            window.currentWord = data.word;
+        }
+
+        async function markKnown(word) {
+            if (!word) word = window.currentWord;
+            if (!word) return;
+
+            try {
+                const res = await fetch('/mark_known', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ word: word })
+                });
+                const response = await res.json();
+
+                if (response.status === 'success') {
+                    const card = document.getElementById('card-' + word);
+                    if (card) {
+                        card.classList.add('card-known');
+                    }
+                }
+            } catch (e) {
+                console.error("Error marking known:", e);
+            }
+        }
+
+        function startSmartAnalyzer() {
+            showSection('smart-analyzer');
+        }
+
+        function handleEnter(e) {
+            if (e.key === 'Enter') sendMessage();
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const text = input.value.trim();
+            if (!text) return;
+
+            addBubble(text, 'user');
+            input.value = '';
+
+            const loadingId = addBubble('Analiz ediliyor...', 'ai', true);
+
+            try {
+                const res = await fetch('/api/analyze', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ text: text })
+                });
+                const response = await res.json();
+
+                const loader = document.getElementById(loadingId);
+                if (loader) loader.remove();
+
+                if (response.status === 'success') {
+                    const data = response.data;
+
+                    let htmlContent = `
+                        <div style="margin-bottom: 8px;">
+                            <strong>Skor: ${data.score}/100</strong>
+                            ${data.score < 100 ? `<span style="color: #E91E63; margin-left: 10px;">(Düzeltildi)</span>` : '✅'}
+                        </div>
+                    `;
+
+                    if (data.corrected && data.corrected !== text) {
+                        htmlContent += `<div style="background: #FFF3E0; padding: 8px; border-radius: 8px; margin-bottom: 8px; color: #E65100;">
+                            <strong>Düzeltme:</strong> ${data.corrected}
+                        </div>`;
+                    }
+
+                    if (data.explanation) {
+                        htmlContent += `<div style="margin-bottom: 8px;">${data.explanation}</div>`;
+                    }
+
+                    if (data.motivation) {
+                        htmlContent += `<div style="font-style: italic; color: #E91E63; font-weight: 600;">${data.motivation}</div>`;
+                    }
+
+                    addBubble(htmlContent, 'ai-success', false, true);
+                } else {
+                    addBubble('Bir hata oluştu: ' + (response.error || 'Bilinmeyen hata'), 'ai-error');
+                }
+            } catch (err) {
+                const loader = document.getElementById(loadingId);
+                if (loader) loader.remove();
+                addBubble('Bağlantı hatası.', 'ai-error');
+            }
+        }
+
+        function addBubble(text, type, isTemp = false, isHtml = false) {
+            const chat = document.getElementById('chat-window');
+            const div = document.createElement('div');
+            div.className = `bubble ${type} fade-in`;
+
+            if (isHtml) {
+                div.innerHTML = text;
+            } else {
+                div.innerText = text;
+            }
+
+            const id = 'bubble-' + Date.now();
+            div.id = id;
+            chat.appendChild(div);
+            chat.scrollTo({ top: chat.scrollHeight, behavior: 'smooth' });
+            return id;
+        }
+
+    </script>
+</body>
+
+</html>

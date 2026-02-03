@@ -1,0 +1,5 @@
+.env
+__pyache__/
+*.pyc
+instance/
+.DS_Store
