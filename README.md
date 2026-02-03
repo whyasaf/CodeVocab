@@ -1,6 +1,6 @@
 #  CodeVocab: AI-Powered English Learning Assistant
 
-![CodeVocab Logo](static/cv_banner_ekran.png)
+![CodeVocab Logo](static/cv_banner_1.png)
 
 **CodeVocab**, sıradan kelime ezberleme yöntemlerini **Google Gemini AI** teknolojisiyle birleştirerek size özel, dinamik ve akıllı bir İngilizce öğrenme deneyimi sunar. 
 
