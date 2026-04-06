@@ -1,0 +1,223 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Hakkında — CodeVocab</title>
+    <meta
+      name="description"
+      content="CodeVocab, yapay zeka destekli dinamik bir İngilizce öğrenme asistanıdır. Whyasaf tarafından geliştirilmiştir."
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      href="{{ url_for('static', filename='codevocablogohead.png') }}"
+    />
+  </head>
+
+  <body class="about-page">
+    <div class="app-background" aria-hidden="true">
+      <div class="bg-orb bg-orb-one"></div>
+      <div class="bg-orb bg-orb-two"></div>
+    </div>
+
+    <nav class="cv-navbar" id="cv-navbar">
+      <a class="cv-navbar-brand" href="/">
+        <img
+          src="{{ url_for('static', filename='codevocablogohead.png') }}"
+          alt="CodeVocab"
+          class="nav-logo"
+        />
+      </a>
+      <div class="cv-navbar-links">
+        <a class="cv-nav-btn" href="/">Ana Sayfa</a>
+        <a class="cv-nav-btn cv-nav-btn-active" href="/about">Hakkında</a>
+      </div>
+    </nav>
+
+    <main class="about-container">
+      <section class="about-hero">
+        <div class="about-shell">
+          <p class="eyebrow">Hakkında / Vizyon</p>
+          <h1>
+            Statik listeleri çöpe attık. Yapay zeka ile öğrenmeyi yeniden
+            tasarladık.
+          </h1>
+          <p class="about-hero-sub">
+            CodeVocab, geliştirici <strong>Whyasaf</strong>'ın yapay zeka
+            destekli ilk ve en büyük projelerinden biridir. Geleneksel, sıkıcı
+            kelime ezberleme listelerinin yerine — anlık, bağlama dayalı ve
+            tamamen dinamik bir İngilizce öğrenme deneyimi sunar.
+          </p>
+        </div>
+      </section>
+
+      <section class="about-section">
+        <div class="about-shell">
+          <div class="about-grid">
+            <article class="about-feature-card">
+              <span class="about-feature-number">01</span>
+              <h2>Kelime Avcısı</h2>
+              <p>
+                Seri halinde sunulan kelimelerden birini seç, Google Gemini AI o
+                kelimenin anlık tanımını, fonetik karşılığını ve A1'den C1'e üç
+                farklı seviyede örnek cümlesini saniyeler içinde üretir. Her
+                kart benzersiz, her deneyim taze.
+              </p>
+            </article>
+
+            <article class="about-feature-card">
+              <span class="about-feature-number">02</span>
+              <h2>Cümle Analizi</h2>
+              <p>
+                İngilizce bir cümle yaz, AI onu gramer, bağlam ve anlam
+                açısından puanlar. Hatalıysa düzeltir, neden hatalı olduğunu
+                Türkçe açıklar ve seni motive eder. Ufak tefek detaylarla değil,
+                yapısal odakla.
+              </p>
+            </article>
+
+            <article class="about-feature-card">
+              <span class="about-feature-number">03</span>
+              <h2>Öğrenilenler Paneli</h2>
+              <p>
+                Bildiğin kelimeleri işaretle, tarayıcının LocalStorage'ında
+                güvenle saklansın. Yan panelden öğrenme geçmişine göz at — kaç
+                kelime öğrendiğini minimal etiketlerle takip et. Hesap yok,
+                karmaşa yok.
+              </p>
+            </article>
+          </div>
+        </div>
+      </section>
+
+      <section class="about-section about-philosophy">
+        <div class="about-shell">
+          <div class="about-editorial">
+            <p class="eyebrow">Tasarım Felsefesi</p>
+            <h2>Temiz, cesur, sade.</h2>
+            <p class="about-editorial-text">
+              CodeVocab'ın arayüzü gereksiz renk cümbüşlerinden, dekoratif
+              çerçevelerden ve karmaşık navigasyon yapılarından uzak durur.
+              Büyük tipografi, ferah boşluklar ve tek bir vurgu rengi —
+              siyah-beyaz bir tuvalin üzerinde kırmızı bir imza gibi. Tasarım,
+              kullanıcının dikkatini dağıtmaz; onu içeriğe yönlendirir.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="about-section about-tech">
+        <div class="about-shell">
+          <p class="eyebrow">Teknoloji Yığını</p>
+          <h2>Arkasındaki motor.</h2>
+          <div class="about-tech-grid">
+            <div class="about-tech-item">
+              <h3>Google Gemini AI</h3>
+              <p>
+                Anlık kelime kartları ve cümle analizlerini besleyen yapay zeka
+                motoru.
+              </p>
+            </div>
+            <div class="about-tech-item">
+              <h3>Flask</h3>
+              <p>Hafif, hızlı ve esnek Python web framework'ü.</p>
+            </div>
+            <div class="about-tech-item">
+              <h3>Vanilla JS</h3>
+              <p>
+                Framework bağımlılığı olmadan, saf JavaScript ile inşa edilmiş
+                arayüz.
+              </p>
+            </div>
+            <div class="about-tech-item">
+              <h3>SQLite</h3>
+              <p>
+                2.200+ kelimelik veritabanı için hafif ve taşınabilir depolama.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="about-section about-cta">
+        <div class="about-shell">
+          <div class="about-cta-block">
+            <h2>Hazırsan başlayalım.</h2>
+            <p>Kelime avcılığına çık ya da cümlelerini AI ile test et.</p>
+            <a href="/" class="btn btn-primary">CodeVocab'a Dön</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="cv-footer">
+      <div class="cv-footer-top">
+        <div class="cv-footer-brand">
+          <img
+            src="{{ url_for('static', filename='codevocablogo_dep.png') }}"
+            alt="CodeVocab Logo"
+            class="footer-main-logo"
+          />
+          <p class="footer-desc">
+            Yapay zeka destekli, dinamik İngilizce öğrenme asistanı.
+          </p>
+
+          <div class="footer-sub-logos">
+            <a
+              href="https://ornek-sponsor-siteniz.com"
+              target="_blank"
+              class="sponsor-link"
+            >
+              <img
+                src="{{ url_for('static', filename='logo_marki.png') }}"
+                alt="Marki Logo"
+                class="footer-sponsor-logo"
+              />
+            </a>
+
+            <a href="https://whyasaf.com" target="_blank" class="sponsor-link">
+              <img
+                src="{{ url_for('static', filename='whyasaf_logo.png') }}"
+                alt="Whyasaf Logo"
+                class="footer-sponsor-logo"
+              />
+            </a>
+          </div>
+        </div>
+        <div class="cv-footer-links">
+          <div class="footer-col">
+            <h4>Platform</h4>
+            <a href="/?mode=vocab">Kelime Avcısı</a>
+            <a href="/?mode=chat">Cümle Analizi</a>
+          </div>
+          <div class="footer-col">
+            <h4>Kurumsal</h4>
+            <a href="/about">Hakkında & Vizyon</a>
+            <a href="https://whyasaf.com">Geliştirici (whyasaf)</a>
+            <a href="/guide">Nasıl Kullanılır?</a>
+          </div>
+          <div class="footer-col">
+            <h4>Yasal</h4>
+            <a href="/privacy">Gizlilik Politikası</a>
+            <a href="/terms">Kullanım Koşulları</a>
+          </div>
+        </div>
+      </div>
+      <div class="cv-footer-bottom">
+        <p>
+          CodeVocab 2026 © Tüm hakları saklıdır. Ömer Asaf Ak | whyasaf
+          tarafından tasarlanmış ve kodlanmıştır.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

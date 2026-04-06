@@ -1,0 +1,204 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Nasıl Kullanılır? — CodeVocab</title>
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='style.css') }}"
+    />
+    <link
+      rel="stylesheet"
+      href="{{ url_for('static', filename='guide.css') }}"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      href="{{ url_for('static', filename='codevocablogohead.png') }}"
+    />
+  </head>
+
+  <body class="legal-page">
+    <div class="app-background" aria-hidden="true">
+      <div class="bg-orb bg-orb-one"></div>
+      <div class="bg-orb bg-orb-two"></div>
+    </div>
+
+    <nav class="cv-navbar" id="cv-navbar">
+      <a class="cv-navbar-brand" href="/">
+        <img
+          src="{{ url_for('static', filename='codevocablogohead.png') }}"
+          alt="CodeVocab"
+          class="nav-logo"
+        />
+      </a>
+      <div class="cv-navbar-links">
+        <a class="cv-nav-btn" href="/">Ana Sayfa</a>
+        <a class="cv-nav-btn" href="/about">Hakkında</a>
+      </div>
+    </nav>
+
+    <main class="guide-container">
+      <h1>CodeVocab Kullanım Rehberi</h1>
+
+      <h2>Giriş: Neden CodeVocab?</h2>
+      <p>
+        CodeVocab, kelimeleri sadece sözlük anlamıyla değil, gerçek hayattaki
+        <span class="highlight">kullanım bağlamlarıyla</span> ve yapay zeka
+        desteğiyle öğrenmeniz için tasarlanmıştır. İşte platformun ana
+        özellikleri:
+      </p>
+
+      <h2>1. Kelime Avcısı (Vocab Hunter)</h2>
+      <p>
+        Ana sayfanın merkezinde yer alan bu modül, kelime dağarcığınızı
+        genişletmenin en hızlı yoludur.
+      </p>
+      <ul>
+        <li>
+          <strong>Keşfet:</strong> "Yeni Kelime Getir" butonuna basarak rastgele
+          bir kelime seçin.
+        </li>
+        <li>
+          <strong>AI Analizi:</strong> Bir kelimeye tıkladığınızda yapay zeka o
+          kelime için:
+          <ul>
+            <li>Türkçe karşılığını,</li>
+            <li>Fonetik okunuşunu,</li>
+            <li>
+              <span class="highlight"
+                >A1 (Başlangıç), B1 (Orta) ve C1 (İleri)</span
+              >
+              seviyelerinde 3 farklı örnek cümleyi saniyeler içinde üretir.
+            </li>
+          </ul>
+        </li>
+        <li>
+          <strong>Koleksiyona Ekle:</strong> Eğer kelimeyi öğrendiğinizi
+          düşünüyorsanız "Öğrenilenler Listesine Ekle" butonunu kullanın.
+        </li>
+      </ul>
+
+      <h2>2. AI Cümle Analizi (Codvo AI)</h2>
+      <p>
+        Kendi kurduğunuz cümlelerin doğruluğundan emin olmak mı istiyorsunuz?
+      </p>
+      <ul>
+        <li>
+          <strong>Metin Girişi:</strong> "Cümle Analizi" kutusuna İngilizce
+          cümlenizi yazın.
+        </li>
+        <li>
+          <strong>Puanlama:</strong> Yapay zeka cümlenizi
+          <span class="highlight">100 üzerinden</span> (Gramer, Doğallık,
+          Bağlam) puanlar.
+        </li>
+        <li>
+          <strong>Geri Bildirim:</strong> Hatalı kısımlar tespit edilir ve neden
+          yanlış olduğu <span class="highlight">Türkçe</span> olarak açıklanır.
+        </li>
+        <li>
+          <strong>Öneri:</strong> AI size aynı cümleyi "Daha Doğal/Native" nasıl
+          kurabileceğinize dair alternatifler sunar.
+        </li>
+      </ul>
+
+      <h2>3. İlerleme Takibi (Progress Tracker)</h2>
+      <p>
+        Uygulamanın sağ üst köşesindeki "Öğrenilenler" (veya "Kelime Listem")
+        butonuna tıklayarak:
+      </p>
+      <ul>
+        <li>Daha önce kaydettiğiniz tüm kelimeleri görebilir,</li>
+        <li>İhtiyaç duymadığınız kelimeleri listenizden silebilirsiniz.</li>
+        <li>
+          <span class="highlight">Not:</span> Bu veriler
+          <span class="highlight">LocalStorage</span> teknolojisi ile sadece
+          sizin tarayıcınızda saklanır.
+        </li>
+      </ul>
+
+      <h2>4. İpuçları ve Tavsiyeler</h2>
+      <ul>
+        <li>
+          <strong>Süreklilik:</strong> Her gün en az 5 yeni kelimeyi
+          "Öğrenilenler" listesine eklemeye çalışın.
+        </li>
+        <li>
+          <strong>Analiz:</strong> Cümle analizi modülünde sadece hatalarınıza
+          bakmayan, AI'nın önerdiği "daha doğal" kalıpları sesli tekrar edin.
+        </li>
+        <li>
+          <strong>Mobil Kullanım:</strong> CodeVocab
+          <span class="highlight">responsive (duyarlı)</span> bir tasarıma
+          sahiptir; otobüste veya kahve molasında telefonunuzdan kelime avına
+          devam edebilirsiniz.
+        </li>
+      </ul>
+    </main>
+
+    <footer class="cv-footer">
+      <div class="cv-footer-top">
+        <div class="cv-footer-brand">
+          <img
+            src="{{ url_for('static', filename='codevocablogo_dep.png') }}"
+            alt="CodeVocab Logo"
+            class="footer-main-logo"
+          />
+          <p class="footer-desc">
+            Yapay zeka destekli, dinamik İngilizce öğrenme asistanı.
+          </p>
+          <div class="footer-sub-logos">
+            <a
+              href="https://www.instagram.com/marki.corp/"
+              target="_blank"
+              class="sponsor-link"
+            >
+              <img
+                src="{{ url_for('static', filename='logo_marki.png') }}"
+                alt="Marki Logo"
+                class="footer-sponsor-logo"
+              />
+            </a>
+            <a href="https://whyasaf.com" target="_blank" class="sponsor-link">
+              <img
+                src="{{ url_for('static', filename='whyasaf_logo.png') }}"
+                alt="Whyasaf Logo"
+                class="footer-sponsor-logo"
+              />
+            </a>
+          </div>
+        </div>
+        <div class="cv-footer-links">
+          <div class="footer-col">
+            <h4>Platform</h4>
+            <a href="/?mode=vocab">Kelime Avcısı</a>
+            <a href="/?mode=chat">Cümle Analizi</a>
+          </div>
+          <div class="footer-col">
+            <h4>Kurumsal</h4>
+            <a href="/about">Hakkında & Vizyon</a>
+            <a href="https://whyasaf.com">Geliştirici (whyasaf)</a>
+            <a href="/guide">Nasıl Kullanılır?</a>
+          </div>
+          <div class="footer-col">
+            <h4>Yasal</h4>
+            <a href="/privacy">Gizlilik Politikası</a>
+            <a href="/terms">Kullanım Koşulları</a>
+          </div>
+        </div>
+      </div>
+      <div class="cv-footer-bottom">
+        <p>
+          CodeVocab 2026 © Tüm hakları saklıdır. Ömer Asaf Ak | whyasaf
+          tarafından tasarlanmış ve kodlanmıştır.
+        </p>
+      </div>
+    </footer>
+  </body>
+</html>

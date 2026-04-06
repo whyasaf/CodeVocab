@@ -8,12 +8,12 @@ load_dotenv()
 
 
 app = Flask(__name__)
+app.debug = False
 DB_FILE = "vocab.db"
 generated_words_cache = {}
-KNOWN_WORDS_FILE = 'known_words.json'
 
-GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY") 
-genai.configure(api_key=GOOGLE_API_KEY)
+api_key = os.environ.get("GEMINI_API_KEY")
+genai.configure(api_key=api_key)
 
 model = genai.GenerativeModel('gemini-flash-latest')
 def get_db_connection():
@@ -78,12 +78,38 @@ def generate_word_card(word):
 def home():
     return render_template('index.html')
 
-@app.route('/api/get_random_words')
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
+
+@app.route('/terms')
+def terms():
+    return render_template('terms.html')
+
+@app.route('/guide')
+def guide():
+    return render_template('guide.html')
+
+@app.route('/api/get_random_words', methods=['POST'])
 def get_random_words():
     try:
+        data = request.get_json(silent=True) or {}
+        known_words = data.get('known_words', [])
+
         conn = get_db_connection()
         cursor = conn.cursor()
-        cursor.execute("SELECT word FROM words WHERE status='new' ORDER BY RANDOM() LIMIT 3")
+
+        if known_words:
+            placeholders = ",".join("?" for _ in known_words)
+            query = f"SELECT word FROM words WHERE word NOT IN ({placeholders}) ORDER BY RANDOM() LIMIT 3"
+            cursor.execute(query, known_words)
+        else:
+            cursor.execute("SELECT word FROM words ORDER BY RANDOM() LIMIT 3")
+
         rows = cursor.fetchall()
         conn.close()
         words = [row['word'] for row in rows]
@@ -102,48 +128,6 @@ def word_details():
         return jsonify(details)
     return jsonify({"error": "Word not found or AI generation failed"}), 404
 
-@app.route('/api/mark_known', methods=['POST'])
-def mark_known():
-    data = request.json
-    word = data.get('word')
-    if not word:
-        return jsonify({"error": "No word provided"}), 400
-    
-    try:
-        conn = get_db_connection()
-        conn.execute("UPDATE words SET status='learned' WHERE word=?", (word,))
-        conn.commit()
-        conn.close()
-        return jsonify({"success": True})
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
-
-@app.route('/mark_known', methods=['POST'])
-def mark_known_simple():
-    data = request.json
-    word = data.get('word')
-    if not word:
-        return jsonify({"status": "error", "message": "No word provided"}), 400
-    
-    try:
-        known_list = []
-        if os.path.exists(KNOWN_WORDS_FILE):
-            with open(KNOWN_WORDS_FILE, 'r') as f:
-                try:
-                    known_list = json.load(f)
-                except json.JSONDecodeError:
-                    known_list = []
-        
-        if word not in known_list:
-            known_list.append(word)
-            
-        with open(KNOWN_WORDS_FILE, 'w') as f:
-            json.dump(known_list, f)
-            
-        return jsonify({"status": "success"})
-    except Exception as e:
-        return jsonify({"status": "error", "message": str(e)}), 500
-
 @app.route('/api/analyze', methods=['POST'])
 def analyze():
     data = request.json
@@ -153,21 +137,26 @@ def analyze():
     
     try:
         prompt = f"""
-        Act as "CodeVocab", a friendly, slightly futuristic English tutor.
-        Analyze the following English sentence: "{text}"
+        Act as "CodeVocab", a refined, supportive AI English architect. 
+        Your goal is to evaluate the sentence: "{text}"
         
-        Return ONLY a raw JSON response (no markdown formatting) with these valid fields:
-        1. "score": (0-100 integer based on grammar/context)
-        2. "corrected": (The corrected sentence if needed, or same if perfect)
-        3. "explanation": (Turkish explanation, simple and clear. encapsulate in HTML tags like <b> for emphasis if needed)
-        4. "motivation": (Encouraging tone, in Turkish)
+        CRITICAL RULES:
+        1. BE LENIENT: If the only "errors" are minor capitalization (e.g. 'i' instead of 'I') or missing a final period, do NOT penalize heavily. Highlight it gently but focus on the structural integrity.
+        2. MEANING FIRST: If the core message is clear and grammatically sound, give a high score.
+        3. TEACHING TONE: Provide clear, encouraging feedback in Turkish.
+        
+        Return ONLY a raw JSON response (no markdown) with:
+        1. "score": (0-100 integer)
+        2. "corrected": (The professionally polished version)
+        3. "explanation": (A friendly Turkish breakdown of what was good or what could be better. Use HTML <b> or <i> tags for key terms.)
+        4. "motivation": (A modern, punchy motivational sentence in Turkish with an emoji.)
         
         Example JSON:
         {{
-            "score": 85,
-            "corrected": "I am going to school.",
-            "explanation": "<b>'Go'</b> fiili şimdiki zamanda <b>'going'</b> olarak kullanılır.",
-            "motivation": "Harikasın, devam et! 🚀"
+            "score": 92,
+            "corrected": "I like coding in Python.",
+            "explanation": "Cümlen gayet net! Sadece <b>'i'</b> yerine büyük <b>'I'</b> kullanman daha profesyonel görünür. Harika bir yapı kurmuşsun.",
+            "motivation": "Kod gibi temiz bir cümle! 💻"
         }}
         """
         
@@ -189,5 +178,4 @@ def analyze():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-if __name__ == '__main__':
-    app.run(debug=True, port=5002, host='0.0.0.0')
+

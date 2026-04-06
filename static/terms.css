@@ -1,0 +1,67 @@
+/* terms.css */
+.terms-container {
+  max-width: 800px;
+  margin: 60px auto 100px;
+  padding: 40px 5%;
+  font-family: 'Inter', sans-serif;
+  color: #333;
+  line-height: 1.8;
+  box-sizing: border-box;
+}
+
+.terms-container h1 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #111;
+  margin-bottom: 25px;
+  letter-spacing: -0.02em;
+}
+
+.terms-container h2 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #111;
+  margin-top: 40px;
+  margin-bottom: 15px;
+  line-height: 1.35;
+}
+
+.terms-container p {
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+  color: #444;
+}
+
+.terms-container ul {
+  margin-bottom: 25px;
+  padding-left: 20px;
+}
+
+.terms-container li {
+  margin-bottom: 10px;
+  color: #444;
+  font-size: 1.1rem;
+}
+
+.terms-container li strong {
+  color: #111;
+}
+
+@media (max-width: 768px) {
+  .terms-container {
+    margin-top: 30px;
+    padding: 20px 5%;
+  }
+
+  .terms-container h1 {
+    font-size: 1.8rem;
+  }
+
+  .terms-container h2 {
+    font-size: 1.35rem;
+  }
+
+  .terms-container p, .terms-container li {
+    font-size: 1.05rem;
+  }
+}

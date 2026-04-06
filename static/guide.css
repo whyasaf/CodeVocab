@@ -1,0 +1,90 @@
+/* guide.css */
+.guide-container {
+  max-width: 800px;
+  margin: 60px auto 100px;
+  padding: 40px 5%;
+  font-family: 'Inter', sans-serif;
+  color: #333;
+  line-height: 1.8;
+  box-sizing: border-box;
+}
+
+.guide-container h1 {
+  font-size: 2.2rem;
+  font-weight: 800;
+  color: #111;
+  margin-bottom: 30px;
+  letter-spacing: -0.02em;
+}
+
+.guide-container h2 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #111;
+  margin-top: 50px;
+  margin-bottom: 20px;
+  line-height: 1.35;
+  border-bottom: 1px solid #eaeaea;
+  padding-bottom: 8px;
+}
+
+.guide-container h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #222;
+  margin-top: 35px;
+  margin-bottom: 15px;
+}
+
+.guide-container p {
+  font-size: 1.1rem;
+  margin-bottom: 20px;
+  color: #444;
+}
+
+.guide-container ul {
+  margin-bottom: 25px;
+  padding-left: 20px;
+}
+
+.guide-container li {
+  margin-bottom: 12px;
+  color: #444;
+  font-size: 1.1rem;
+}
+
+.guide-container li strong {
+  color: #111;
+}
+
+/* Custom highlight class for important text */
+.highlight {
+  background-color: #fff9c4; /* Light yellow highlight */
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-weight: 500;
+  color: #111;
+}
+
+@media (max-width: 768px) {
+  .guide-container {
+    margin-top: 30px;
+    padding: 20px 5%;
+  }
+
+  .guide-container h1 {
+    font-size: 1.8rem;
+  }
+
+  .guide-container h2 {
+    font-size: 1.4rem;
+  }
+
+  .guide-container h3 {
+    font-size: 1.15rem;
+  }
+
+  .guide-container p, .guide-container li {
+    font-size: 1.05rem;
+  }
+}
