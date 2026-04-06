@@ -343,9 +343,8 @@ p {
 }
 
 .mode-logo {
-  max-width: 176px;
-  width: auto;
-  min-height: 40px;
+  max-width: 140px;
+  height: 44px;
   object-fit: contain;
 }
 
@@ -407,8 +406,8 @@ p {
 .btn-word:hover,
 .btn-word.active {
   transform: translateY(-2px);
-  border-color: rgba(233, 30, 99, 0.28);
-  background: var(--soft-primary);
+  border-color: rgba(233, 30, 99, 0.35);
+  background: var(--soft-primary-strong);
   color: var(--primary);
 }
 
@@ -854,38 +853,46 @@ p {
 
   .chat-composer {
     grid-template-columns: 1fr;
+    gap: 10px;
+    padding: 12px;
+    min-height: auto;
   }
 
   .composer-send {
     width: 100%;
+    min-height: 48px;
+  }
+
+  #chat-input {
+    min-height: 52px;
   }
 }
 
 @media (max-width: 720px) {
   :root {
     --content-width: min(100vw - 24px, 100%);
-    --chat-bar-height: 156px;
+    --chat-bar-height: 148px;
   }
 
   section {
-    padding: 84px 0 112px;
+    padding: 80px 0 100px;
   }
 
   #smart-analyzer {
-    padding-bottom: calc(var(--chat-bar-height) + 144px);
+    padding-bottom: calc(var(--chat-bar-height) + 120px);
   }
 
   h1 {
-    font-size: clamp(2.8rem, 13vw, 4.6rem);
+    font-size: clamp(2.6rem, 12vw, 4.2rem);
     max-width: none;
   }
 
   h2 {
-    font-size: clamp(1.9rem, 8vw, 2.8rem);
+    font-size: clamp(1.8rem, 8vw, 2.6rem);
   }
 
   .topbar {
-    margin-bottom: 24px;
+    margin-bottom: 20px;
   }
 
   .mode-card,
@@ -893,20 +900,27 @@ p {
   .detail-card,
   .chat-shell {
     border-radius: 24px;
+    padding: 24px;
+  }
+
+  .mode-card {
+    min-height: auto;
+    gap: 32px;
   }
 
   .sentence-item {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .chat-composer-wrap {
-    bottom: 14px;
+    bottom: 12px;
   }
 
   .toast-stack {
-    top: 14px;
-    right: 14px;
-    left: 14px;
+    top: 12px;
+    right: 12px;
+    left: 12px;
   }
 
   .toast {
@@ -914,20 +928,49 @@ p {
     max-width: none;
     width: 100%;
   }
+
+  .cv-navbar {
+    height: 56px;
+  }
+
+  .cv-navbar-links {
+    gap: 4px;
+  }
+
+  .cv-nav-btn {
+    padding: 6px 10px;
+    font-size: 0.76rem;
+  }
+
+  .nav-logo {
+    height: 30px;
+  }
+
+  .cv-panel-header {
+    padding: 20px 20px 14px;
+  }
+
+  .cv-panel-body {
+    padding: 8px 20px 32px;
+  }
 }
 
 @media (max-width: 520px) {
   .word-selection-row,
   .card-actions {
-    flex-direction: column;
-    align-items: stretch;
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
   }
 
   .btn-word,
   .btn,
   .inline-note,
   .pill-loader {
-    width: 100%;
+    width: auto;
+    flex: 1 1 auto;
+    min-width: calc(50% - 12px);
   }
 
   .bubble {
@@ -1156,28 +1199,7 @@ p {
   letter-spacing: 0.06em;
 }
 
-@media (max-width: 720px) {
-  .cv-navbar {
-    height: 56px;
-  }
 
-  .cv-navbar-brand {
-    font-size: 1.1rem;
-  }
-
-  .cv-nav-btn {
-    padding: 6px 12px;
-    font-size: 0.78rem;
-  }
-
-  .cv-panel-header {
-    padding: 20px 20px 16px;
-  }
-
-  .cv-panel-body {
-    padding: 8px 20px 32px;
-  }
-}
 
 .cv-nav-btn-active {
   color: var(--text-dark);
