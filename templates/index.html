@@ -304,6 +304,8 @@
           .forEach((section) => section.classList.remove("active"));
         document.getElementById(id).classList.add("active");
         setActiveSectionState(id);
+
+        window.scrollTo(0, 0);
       }
 
       function showToast(message, type = "error") {
@@ -485,46 +487,44 @@
         }
 
         let htmlContent = `
-                <div class="analysis-card">
-                    <div class="analysis-header">
-                        <div class="analysis-score-wrap">
-                            <span class="analysis-score-value">${data.score}</span>
-                            <span class="analysis-score-max">/100</span>
-                        </div>
-                        <span class="analysis-pill ${statusClass}">${statusLabel}</span>
-                    </div>
-            `;
+        <div class="analysis-card">
+            <div class="analysis-header">
+                <div class="analysis-score-wrap">
+                    <span class="analysis-score-value">${data.score}</span>
+                    <span class="analysis-score-max">/100</span>
+                </div>
+                <span class="analysis-pill ${statusClass}">${statusLabel}</span>
+            </div>
+    `;
 
-        if (
-          data.corrected &&
-          data.corrected.toLowerCase().replace(/[.,!?;:]/g, "") !==
-            originalText.toLowerCase().replace(/[.,!?;:]/g, "")
-        ) {
+        const correctedText = data.corrected_sentence || data.corrected;
+
+        if (correctedText) {
           htmlContent += `
-                    <div class="analysis-corrected-section">
-                        <p class="analysis-label">Önerilen Düzeltme</p>
-                        <div class="analysis-corrected-box">
-                            ${data.corrected}
-                        </div>
-                    </div>
-                `;
+            <div class="analysis-corrected-section">
+                <p class="analysis-label">Önerilen Düzeltme</p>
+                <div class="analysis-corrected-box">
+                    ${correctedText}
+                </div>
+            </div>
+        `;
         }
 
         if (data.explanation) {
           htmlContent += `
-                    <div class="analysis-feedback-section">
-                        <p class="analysis-label">Mimar Analizi</p>
-                        <div class="analysis-explanation">${data.explanation}</div>
-                    </div>
-                `;
+            <div class="analysis-feedback-section">
+                <p class="analysis-label">Mimar Analizi</p>
+                <div class="analysis-explanation">${data.explanation}</div>
+            </div>
+        `;
         }
 
         if (data.motivation) {
           htmlContent += `
-                    <div class="analysis-footer">
-                        <span class="analysis-motivation-text">${data.motivation}</span>
-                    </div>
-                `;
+            <div class="analysis-footer">
+                <span class="analysis-motivation-text">${data.motivation}</span>
+            </div>
+        `;
         }
 
         htmlContent += `</div>`;
@@ -575,6 +575,11 @@
         }
       }
 
+      let isInitialLoad = true;
+      setTimeout(() => {
+        isInitialLoad = false;
+      }, 1000);
+
       function addBubble(text, type, isTemp = false, isHtml = false) {
         const chat = document.getElementById("chat-window");
         const div = document.createElement("div");
@@ -589,7 +594,11 @@
         const id = (isTemp ? "temp-" : "bubble-") + Date.now();
         div.id = id;
         chat.appendChild(div);
-        chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
+
+        if (!isInitialLoad) {
+          chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
+        }
+
         return id;
       }
 
