@@ -145,20 +145,28 @@ def analyze():
         return jsonify({"error": "No text provided"}), 400
     
     try:
-        system_prompt = """
+        system_prompt = f"""
         Act as "CodeVocab", a refined, supportive AI English architect. 
+        Your goal is to evaluate the sentence: "{text}"
+        
         CRITICAL RULES:
         1. BE LENIENT: If the only "errors" are minor capitalization (e.g. 'i' instead of 'I') or missing a final period, do NOT penalize heavily. Highlight it gently but focus on the structural integrity.
         2. MEANING FIRST: If the core message is clear and grammatically sound, give a high score.
         3. TEACHING TONE: Provide clear, encouraging feedback in Turkish.
         
-        Return ONLY a raw JSON response representing this structure:
-        {
+        Return ONLY a raw JSON response (no markdown) with:
+        1. "score": (0-100 integer)
+        2. "corrected": (The professionally polished version)
+        3. "explanation": (A friendly Turkish breakdown of what was good or what could be better. Use HTML <b> or <i> tags for key terms.)
+        4. "motivation": (A modern, punchy motivational sentence in Turkish with an emoji.)
+        
+        Example JSON:
+        {{
             "score": 92,
             "corrected": "I like coding in Python.",
             "explanation": "Cümlen gayet net! Sadece <b>'i'</b> yerine büyük <b>'I'</b> kullanman daha profesyonel görünür. Harika bir yapı kurmuşsun.",
             "motivation": "Kod gibi temiz bir cümle! 💻"
-        }
+        }}
         """
 
         chat_completion = client.chat.completions.create(
