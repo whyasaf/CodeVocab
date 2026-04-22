@@ -1,21 +1,22 @@
 from flask import Flask, render_template, request, jsonify
 import sqlite3
-import google.generativeai as genai
 import os
 from dotenv import load_dotenv
 import json
-load_dotenv()
+from groq import Groq
 
+load_dotenv()
 
 app = Flask(__name__)
 app.debug = False
 DB_FILE = "vocab.db"
 generated_words_cache = {}
 
-api_key = os.environ.get("GEMINI_API_KEY")
-genai.configure(api_key=api_key)
+api_key = os.environ.get("GROQ_API_KEY")
+client = Groq(api_key=api_key)
 
-model = genai.GenerativeModel('gemini-flash-latest')
+GROQ_MODEL = "llama-3.1-8b-instant"
+
 def get_db_connection():
     conn = sqlite3.connect(DB_FILE)
     conn.row_factory = sqlite3.Row
@@ -23,7 +24,7 @@ def get_db_connection():
 
 def generate_word_card(word):
     if word in generated_words_cache:
-        print(f"Combinando (Fetching from Cache): {word}")
+        print(f"Cache'den getiriliyor: {word}")
         return generated_words_cache[word]
 
     prompt = f"""
@@ -43,10 +44,23 @@ def generate_word_card(word):
     """
     
     try:
-        response = model.generate_content(prompt)
-        text = response.text
-        text = text.replace('```json', '').replace('```', '').strip()
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": "You are an English teaching API that outputs perfectly formatted JSON data."
+                },
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ],
+            model=GROQ_MODEL,
+            response_format={"type": "json_object"}, 
+            temperature=0.3
+        )
         
+        text = chat_completion.choices[0].message.content
         data = json.loads(text)
         
         if 'definition' in data:
@@ -57,11 +71,6 @@ def generate_word_card(word):
         
     except Exception as e:
         print(f"HATA DETAYI: {e}")
-        if 'response' in locals():
-            print(f"CEVAP: {response.text}")
-        else:
-            print("CEVAP: Cevap yok (API çağrısı başarısız oldu)")
-            
         fallback_data = {
             "word": word,
             "phonetic": "//",
@@ -136,38 +145,39 @@ def analyze():
         return jsonify({"error": "No text provided"}), 400
     
     try:
-        prompt = f"""
+        system_prompt = """
         Act as "CodeVocab", a refined, supportive AI English architect. 
-        Your goal is to evaluate the sentence: "{text}"
-        
         CRITICAL RULES:
         1. BE LENIENT: If the only "errors" are minor capitalization (e.g. 'i' instead of 'I') or missing a final period, do NOT penalize heavily. Highlight it gently but focus on the structural integrity.
         2. MEANING FIRST: If the core message is clear and grammatically sound, give a high score.
         3. TEACHING TONE: Provide clear, encouraging feedback in Turkish.
         
-        Return ONLY a raw JSON response (no markdown) with:
-        1. "score": (0-100 integer)
-        2. "corrected": (The professionally polished version)
-        3. "explanation": (A friendly Turkish breakdown of what was good or what could be better. Use HTML <b> or <i> tags for key terms.)
-        4. "motivation": (A modern, punchy motivational sentence in Turkish with an emoji.)
-        
-        Example JSON:
-        {{
+        Return ONLY a raw JSON response representing this structure:
+        {
             "score": 92,
             "corrected": "I like coding in Python.",
             "explanation": "Cümlen gayet net! Sadece <b>'i'</b> yerine büyük <b>'I'</b> kullanman daha profesyonel görünür. Harika bir yapı kurmuşsun.",
             "motivation": "Kod gibi temiz bir cümle! 💻"
-        }}
+        }
         """
+
+        chat_completion = client.chat.completions.create(
+            messages=[
+                {
+                    "role": "system",
+                    "content": system_prompt
+                },
+                {
+                    "role": "user",
+                    "content": f'Evaluate this sentence and return JSON: "{text}"'
+                }
+            ],
+            model=GROQ_MODEL,
+            response_format={"type": "json_object"},
+            temperature=0.5
+        )
         
-        response = model.generate_content(prompt)
-        
-        response_text = response.text.strip()
-        if response_text.startswith("```json"):
-            response_text = response_text[7:-3].strip()
-        elif response_text.startswith("```"):
-            response_text = response_text[3:-3].strip()
-            
+        response_text = chat_completion.choices[0].message.content
         result = json.loads(response_text)
         
         return jsonify({
@@ -176,8 +186,8 @@ def analyze():
         })
         
     except Exception as e:
+        print(f"ANALYZE HATASI: {e}")
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5050)
-

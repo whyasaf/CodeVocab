@@ -1,4 +1,3 @@
 Flask
-google-generativeai
+groq
 python-dotenv
-gunicorn

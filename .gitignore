@@ -4,3 +4,4 @@ __pyache__/
 instance/
 .DS_Store
 .vercel
+.env*.local
