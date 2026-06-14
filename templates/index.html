@@ -205,6 +205,8 @@
               <span class="pill-loader" aria-hidden="true"></span>
               <span class="pill-loader" aria-hidden="true"></span>
               <span class="pill-loader" aria-hidden="true"></span>
+              <span class="pill-loader" aria-hidden="true"></span>
+              <span class="pill-loader" aria-hidden="true"></span>
             </div>
           </div>
 
@@ -255,40 +257,35 @@
         <button class="nav-link" onclick="showSection('mode-selection')">
           ← Ana Menü
         </button>
+        <div class="chat-header-title">
+          <img src="{{ url_for('static', filename='cvai.png') }}" alt="CodeVocab AI" class="chat-header-logo" />
+        </div>
+        <div class="topbar-right-spacer" style="width: 110px;"></div>
       </div>
 
       <div class="section-shell section-layout section-layout-chat">
-        <div class="section-heading">
-          <p class="eyebrow">Sentence Analyzer</p>
-          <h1>
-            Cümlelerini temiz, modern ve rahat bir sohbet yüzeyinde test et.
-          </h1>
-          <p class="section-intro">
-            Mesajlar üstte akarken giriş çubuğu her zaman aşağıda erişilebilir
-            kalır.
-          </p>
-        </div>
+        <div class="chat-shell chat-shell--empty">
+          <div class="chat-welcome-hero">
+            <h1 class="chat-welcome-title">Hemen başlayalım</h1>
+            <p class="chat-welcome-subtitle">İngilizce cümleni yaz, hemen analiz edelim.</p>
+          </div>
 
-        <div class="chat-shell">
-          <div id="chat-window" class="chat-window">
-            <div class="bubble ai">
-              Merhaba! İngilizce bir cümle yaz, kontrol edeyim.
+          <div id="chat-window" class="chat-window"></div>
+
+          <div class="chat-composer-wrap">
+            <div class="chat-composer">
+              <input
+                type="text"
+                id="chat-input"
+                placeholder="Cümleni buraya yaz..."
+                onkeypress="handleEnter(event)"
+              />
+              <button class="btn btn-primary composer-send" onclick="sendMessage()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                Analiz Et
+              </button>
             </div>
           </div>
-        </div>
-      </div>
-
-      <div class="chat-composer-wrap">
-        <div class="chat-composer">
-          <input
-            type="text"
-            id="chat-input"
-            placeholder="Cümleni buraya yaz..."
-            onkeypress="handleEnter(event)"
-          />
-          <button class="btn btn-primary composer-send" onclick="sendMessage()">
-            Analiz Et
-          </button>
         </div>
       </div>
     </section>
@@ -306,6 +303,14 @@
         setActiveSectionState(id);
 
         window.scrollTo(0, 0);
+
+        let mode = "";
+        if (id === "vocab-hunter") mode = "vocab";
+        else if (id === "smart-analyzer") mode = "chat";
+        else if (id === "mode-selection") mode = "select";
+
+        const newUrl = mode ? `?mode=${mode}` : window.location.pathname;
+        window.history.replaceState({ section: id }, "", newUrl);
       }
 
       function showToast(message, type = "error") {
@@ -341,6 +346,8 @@
 
       function renderWordButtonSkeletons() {
         return `
+                <span class="pill-loader" aria-hidden="true"></span>
+                <span class="pill-loader" aria-hidden="true"></span>
                 <span class="pill-loader" aria-hidden="true"></span>
                 <span class="pill-loader" aria-hidden="true"></span>
                 <span class="pill-loader" aria-hidden="true"></span>
@@ -462,6 +469,12 @@
 
       function startSmartAnalyzer() {
         showSection("smart-analyzer");
+        const chatWindow = document.getElementById("chat-window");
+        const chatShell = document.querySelector(".chat-shell");
+        if (chatWindow && chatShell) {
+          chatWindow.innerHTML = "";
+          chatShell.classList.add("chat-shell--empty");
+        }
         const input = document.getElementById("chat-input");
         if (input) {
           setTimeout(() => input.focus(), 120);
@@ -478,53 +491,68 @@
 
         let statusLabel = "Geliştirilebilir";
         let statusClass = "analysis-pill-warning";
+        let scoreColor = "#ef6c00";
         if (isPerfect) {
           statusLabel = "Mükemmel";
           statusClass = "analysis-pill-success";
+          scoreColor = "#2e7d32";
         } else if (isGood) {
           statusLabel = "Gayet İyi";
           statusClass = "analysis-pill-info";
+          scoreColor = "#1565c0";
         }
-
-        let htmlContent = `
-        <div class="analysis-card">
-            <div class="analysis-header">
-                <div class="analysis-score-wrap">
-                    <span class="analysis-score-value">${data.score}</span>
-                    <span class="analysis-score-max">/100</span>
-                </div>
-                <span class="analysis-pill ${statusClass}">${statusLabel}</span>
-            </div>
-    `;
 
         const correctedText = data.corrected_sentence || data.corrected;
 
+        let htmlContent = `
+        <div class="analysis-card">
+          <div class="analysis-header">
+            <div class="analysis-score-wrap">
+              <svg class="score-ring" viewBox="0 0 44 44" width="48" height="48">
+                <circle cx="22" cy="22" r="18" fill="none" stroke="#f0f0f0" stroke-width="3.5"/>
+                <circle cx="22" cy="22" r="18" fill="none" stroke="${scoreColor}" stroke-width="3.5"
+                  stroke-dasharray="${(data.score / 100) * 113} 113"
+                  stroke-dashoffset="28.25"
+                  stroke-linecap="round"
+                  transform="rotate(-90 22 22)"
+                  style="transition: stroke-dasharray 0.8s cubic-bezier(0.4,0,0.2,1)"/>
+              </svg>
+              <div class="score-text-group">
+                <span class="analysis-score-value">${data.score}</span>
+                <span class="analysis-score-max">/100</span>
+              </div>
+            </div>
+            <span class="analysis-pill ${statusClass}">${statusLabel}</span>
+          </div>
+        `;
+
         if (correctedText) {
           htmlContent += `
-            <div class="analysis-corrected-section">
-                <p class="analysis-label">Önerilen Düzeltme</p>
-                <div class="analysis-corrected-box">
-                    ${correctedText}
-                </div>
+          <div class="analysis-corrected-section">
+            <p class="analysis-label">Önerilen Düzeltme</p>
+            <div class="analysis-corrected-box">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="corrected-icon"><polyline points="20 6 9 17 4 12"/></svg>
+              ${correctedText}
             </div>
-        `;
+          </div>
+          `;
         }
 
         if (data.explanation) {
           htmlContent += `
-            <div class="analysis-feedback-section">
-                <p class="analysis-label">Mimar Analizi</p>
-                <div class="analysis-explanation">${data.explanation}</div>
-            </div>
-        `;
+          <div class="analysis-feedback-section">
+            <p class="analysis-label">Mimar Analizi</p>
+            <div class="analysis-explanation">${data.explanation}</div>
+          </div>
+          `;
         }
 
         if (data.motivation) {
           htmlContent += `
-            <div class="analysis-footer">
-                <span class="analysis-motivation-text">${data.motivation}</span>
-            </div>
-        `;
+          <div class="analysis-footer">
+            <span class="analysis-motivation-text">${data.motivation}</span>
+          </div>
+          `;
         }
 
         htmlContent += `</div>`;
@@ -536,10 +564,15 @@
         const text = input.value.trim();
         if (!text) return;
 
-        addBubble(text, "user");
+        const chatShell = document.querySelector(".chat-shell");
+        if (chatShell) {
+          chatShell.classList.remove("chat-shell--empty");
+        }
+
+        addMessage(text, "user");
         input.value = "";
 
-        const loadingId = addBubble(
+        const loadingId = addMessage(
           '<div class="typing-indicator"><span></span><span></span><span></span></div>',
           "ai",
           true,
@@ -561,16 +594,16 @@
             throw new Error(response.error || "Analiz tamamlanamadi.");
           }
 
-          addBubble(
+          addMessage(
             buildAnalyzerResponseHtml(response.data, text),
-            "ai-success",
+            "ai-card",
             false,
             true,
           );
         } catch (error) {
           const loader = document.getElementById(loadingId);
           if (loader) loader.remove();
-          addBubble("Bir hata olustu. Lutfen tekrar dene.", "ai-error");
+          addMessage("Bir hata olustu. Lutfen tekrar dene.", "ai-error");
           showToast(error.message || "Baglanti hatasi.");
         }
       }
@@ -580,26 +613,57 @@
         isInitialLoad = false;
       }, 1000);
 
-      function addBubble(text, type, isTemp = false, isHtml = false) {
+      function addMessage(text, type, isTemp = false, isHtml = false) {
         const chat = document.getElementById("chat-window");
-        const div = document.createElement("div");
-        div.className = `bubble ${type}`;
+        const isUser = type === "user";
+        const isCard = type === "ai-card";
+        const isError = type === "ai-error";
 
-        if (isHtml) {
-          div.innerHTML = text;
-        } else {
-          div.innerText = text;
+        const wrapper = document.createElement("div");
+        wrapper.className = `chat-message chat-message--${isUser ? "user" : "ai"}`;
+
+        if (!isUser) {
+          const avatar = document.createElement("div");
+          avatar.className = "chat-avatar chat-avatar--ai";
+          avatar.innerHTML = `<img src="{{ url_for('static', filename='codevocablogohead.png') }}" alt="AI" style="width: 20px; height: 20px; object-fit: contain;" />`;
+          wrapper.appendChild(avatar);
         }
 
-        const id = (isTemp ? "temp-" : "bubble-") + Date.now();
-        div.id = id;
-        chat.appendChild(div);
+        const bubble = document.createElement("div");
+        bubble.className = isCard
+          ? "chat-card"
+          : `chat-bubble chat-bubble--${isUser ? "user" : isError ? "error" : "ai"}`;
+
+        if (isHtml) {
+          bubble.innerHTML = text;
+        } else {
+          bubble.innerText = text;
+        }
+
+        wrapper.appendChild(bubble);
+
+        if (isUser) {
+          const avatar = document.createElement("div");
+          avatar.className = "chat-avatar chat-avatar--user";
+          avatar.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
+          wrapper.appendChild(avatar);
+        }
+
+        const id = (isTemp ? "temp-" : "msg-") + Date.now();
+        wrapper.id = id;
+        chat.appendChild(wrapper);
 
         if (!isInitialLoad) {
           chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
         }
 
         return id;
+      }
+
+      // Legacy alias for any remaining calls
+      function addBubble(text, type, isTemp = false, isHtml = false) {
+        const typeMap = { "user": "user", "ai": "ai", "ai-success": "ai-card", "ai-error": "ai-error" };
+        return addMessage(text, typeMap[type] || type, isTemp, isHtml);
       }
 
       function openPanel(mode) {
@@ -663,6 +727,8 @@
           setTimeout(() => startVocabHunter(), 100);
         } else if (mode === "chat") {
           setTimeout(() => startSmartAnalyzer(), 100);
+        } else if (mode === "select") {
+          setTimeout(() => showSection("mode-selection"), 100);
         }
       });
     </script>

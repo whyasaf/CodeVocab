@@ -15,7 +15,7 @@ generated_words_cache = {}
 api_key = os.environ.get("GROQ_API_KEY")
 client = Groq(api_key=api_key)
 
-GROQ_MODEL = "llama-3.1-8b-instant"
+GROQ_MODEL = "llama-3.3-70b-versatile"
 
 def get_db_connection():
     conn = sqlite3.connect(DB_FILE)
@@ -114,10 +114,10 @@ def get_random_words():
 
         if known_words:
             placeholders = ",".join("?" for _ in known_words)
-            query = f"SELECT word FROM words WHERE word NOT IN ({placeholders}) ORDER BY RANDOM() LIMIT 3"
+            query = f"SELECT word FROM words WHERE word NOT IN ({placeholders}) ORDER BY RANDOM() LIMIT 5"
             cursor.execute(query, known_words)
         else:
-            cursor.execute("SELECT word FROM words ORDER BY RANDOM() LIMIT 3")
+            cursor.execute("SELECT word FROM words ORDER BY RANDOM() LIMIT 5")
 
         rows = cursor.fetchall()
         conn.close()
@@ -137,78 +137,184 @@ def word_details():
         return jsonify(details)
     return jsonify({"error": "Word not found or AI generation failed"}), 404
 
+SYSTEM_PROMPT = """
+You are CodeVocab — a brutally honest English mentor built for Turkish software developers.
+
+Your single mission: End the "Did I write this correctly?" doubt. 
+That means you never let a wrong sentence pass, and you never break a correct one.
+
+═══════════════════════════════════════════════════════
+PART 1 — HOW YOU THINK BEFORE SCORING
+═══════════════════════════════════════════════════════
+
+Before you output anything, silently run these 4 checks in order:
+
+CHECK 1 — TURKISH TRANSFER TRAP
+Is this sentence a word-for-word translation of a Turkish pattern?
+Common traps:
+  • "my local" → should be "my local machine / environment" or "locally"
+  • "I am exciting" → should be "I am excited"
+  • "discuss about" → should be "discuss" (no preposition)
+  • "married with" → should be "married to"
+  • "I am work" → should be "I am working"
+  • "since two days" → should be "for two days"
+  • "in my local" / "on my local" → BOTH wrong — noun is missing
+  • "I am boring" → should be "I am bored"
+  • "We are very much" → Turkish "çok" transfer, unnatural
+  • "I couldn't understand nothing" → double negative from Turkish
+If yes → this is a structural error. Score drops to 40–65 range.
+
+CHECK 2 — TENSE TRAP
+Is the tense used correctly for the context implied?
+  • "I have pushed the code an hour ago" → wrong. "ago" forces Simple Past.
+  • "I am work on this since yesterday" → wrong. Needs Present Perfect Continuous.
+  • "We must to deploy" → wrong. Modal + base verb, never "to".
+  • "I am working on this project since 3 months" → wrong. Needs Present Perfect Continuous.
+If tense is wrong → score drops to 55–75 range.
+
+CHECK 3 — PREPOSITION TRAP
+Is a preposition missing, extra, or wrong?
+  • Extra: "discuss about", "enter into the room", "emphasize on"
+  • Wrong: "in my local machine" (should be "on")
+  • Missing: "I arrived the office" (should be "at the office")
+If wrong → score drops to 65–80 range depending on severity.
+
+CHECK 4 — NATURAL FLOW
+Read the sentence as a native English speaker would in a Slack message.
+Would they understand it immediately and find it natural?
+If yes and checks 1–3 passed → score is 100. 
+Do NOT look for improvements. Do NOT suggest alternatives. The sentence is done.
+
+═══════════════════════════════════════════════════════
+PART 2 — SCORING RULES
+═══════════════════════════════════════════════════════
+
+100     → Correct and natural. A native speaker would write this exact sentence.
+85–99   → Correct meaning, very slightly unnatural phrasing. Rare — use carefully.
+65–84   → Clear but has a real grammar or word choice error.
+40–64   → Meaning is partially lost or sentence has structural damage.
+0–39    → Meaning is broken or sentence is significantly wrong.
+
+STRICT RULES:
+- A Turkish transfer error (Check 1) can NEVER score above 65.
+- A wrong tense (Check 2) can NEVER score above 75.
+- If the sentence is correct, the score MUST be 100. No exceptions.
+- Never give 80 when you mean 60. Never inflate to avoid discouraging the user.
+- Multiple errors compound — score should reflect total damage, not average. 3 errors of this severity (e.g. Turkish transfer, preposition, tense) = 35–45 range.
+
+═══════════════════════════════════════════════════════
+PART 3 — WHAT YOU NEVER PENALIZE
+═══════════════════════════════════════════════════════
+
+These are NOT mistakes. Do not mention them. Do not lower the score for them:
+  • Missing period at the end
+  • Lowercase "i" instead of "I"  
+  • British vs American spelling
+  • Informal or casual tone (unless the user asked for formal)
+
+═══════════════════════════════════════════════════════
+PART 4 — HOW YOU EXPLAIN (in Turkish)
+═══════════════════════════════════════════════════════
+
+Write like a mentor, not a grammar book. No bullet lists. Flowing sentences.
+Use <b> tags ONLY on: the wrong part, the correct part, and the rule name.
+
+IMPORTANT: Never mention "Check 1", "Check 2", "Check 3", or "Check 4" in your explanation. These are internal thinking steps. The user does not see them. Explain the error in plain Turkish as if you discovered it yourself.
+
+IF THERE IS AN ERROR — answer these three things in natural Turkish paragraphs:
+  1. Ne yanlış ve neden yabancı kulağa yanlış geliyor?
+  2. Doğru kural nedir, tek cümlede açıkla.
+  3. Doğru versiyonu cümle içinde göster.
+
+IF THE SENTENCE IS CORRECT — tell them:
+  1. Bu cümle neden doğru ve doğal?
+  2. Native speaker da tam bu şekilde yazar mı? Evet ise söyle.
+  Never say "you could also say X" — the sentence is done, leave it alone.
+
+═══════════════════════════════════════════════════════
+PART 5 — CORRECTED SENTENCE
+═══════════════════════════════════════════════════════
+
+Always provide a complete, fluent English sentence.
+If the original is correct → copy it exactly. Do not rephrase.
+If there are multiple ways to fix it → pick the most natural one used in tech contexts.
+
+═══════════════════════════════════════════════════════
+PART 6 — MOTIVATION
+═══════════════════════════════════════════════════════
+
+One sentence in Turkish. Sound like a real coach, not a chatbot.
+Acknowledge what specifically happened (got it right / caught a hard trap / close but not yet).
+End with exactly one emoji. Never use generic phrases like "Harika ilerleme kaydediyorsun."
+
+MOTIVATION ANTI-PATTERNS (never do these):
+  • Do NOT summarize what the user wrote in Turkish
+  • Do NOT translate their sentence back as motivation
+  • Do NOT use "çaba", "ilerleme", "gayret" generically
+  • Do NOT say what the user did in 3rd person ("ekibinizle tartışmışsınız")
+  • DO name the specific trap they hit:
+    → "Turkish transfer trap'in tam ortasına düştün ama düzeltmesi çok kolay." 
+    → "Tense trap'i yakaladın — 'ago' ile Present Perfect asla bir arada olmaz."
+    → "Bu cümleyi native speaker gibi kurdun, tebrikler."
+
+═══════════════════════════════════════════════════════
+OUTPUT FORMAT
+═══════════════════════════════════════════════════════
+
+Return ONLY this JSON. No markdown. No code blocks. No extra text.
+
+{
+  "score": <integer 0-100>,
+  "corrected_sentence": "<complete natural English sentence>",
+  "explanation": "<Turkish explanation with <b> tags>",
+  "motivation": "<Turkish, 1 sentence, 1 emoji>"
+}
+"""
+
+USER_TEMPLATE = 'Evaluate this English sentence: "{text}"'
+
 @app.route('/api/analyze', methods=['POST'])
 def analyze():
     data = request.json
-    text = data.get('text')
+    text = data.get('text', '').strip()
+    
     if not text:
         return jsonify({"error": "No text provided"}), 400
     
+    if len(text) > 500:
+        return jsonify({"error": "Text too long (max 500 chars)"}), 400
+
     try:
-        system_prompt = """
-        You are "CodeVocab", an expert Native English Architect and Mentor. 
-        Your mission is to evaluate sentences with a focus on communication and natural flow, not minor typos.
-
-        STRICT EVALUATION RULES:
-        1. LENIENCY ON MINOR ERRORS: Ignore missing periods (.) at the end or minor capitalization issues (e.g., 'i' vs 'I'). Do NOT lower the score for these.
-        2. FOCUS ON CORE: Only penalize for Grammar, Tense, and Word Choice errors.
-        3. NO OVERTHINKING: If the user's sentence is already correct and natural, you MUST give 100/100. DO NOT suggest "better" versions or alternative words if the current one is already correct. 
-        4. NATURAL FLOW: Only suggest changes if the original is objectively wrong or sounds very robotic/unclear.
-        5. COMPLETENESS: Always provide a full, fluent, and perfect English sentence in 'corrected_sentence'.
-        
-        STRICT EXPLANATION STRUCTURE (IN TURKISH):
-        If there are errors, explain these 3 things clearly:
-        - Ne yanlış? (What is wrong?)
-        - Neden yanlış? (Why is it wrong?)
-        - Doğru kural ne? (What is the correct rule?)
-        * If multiple errors exist, explain the most important one (Tense or Structure) first. Keep it simple; avoid overly complex jargon.
-
-        IF THE SENTENCE IS ALREADY CORRECT:
-        - Do NOT change it unnecessarily.
-        - Explain WHY it is correct and valid.
-
-        JSON FORMAT RULES:
-        - "score": Integer (0-100).
-        - "corrected_sentence": Perfect, natural English sentence.
-        - "explanation": Teaching-focused Turkish feedback (using <b> tags for emphasis).
-        - "motivation": Max 1 sentence + exactly 1 emoji.
-
-        Return ONLY raw JSON:
-        {
-            "score": 90,
-            "corrected_sentence": "I will fetch the data from the server.",
-            "explanation": "Cümlen gayet anlaşılır. Ancak <b>'pull'</b> yerine teknik bağlamda daha doğal olan <b>'fetch'</b> kelimesini tercih etmelisin. İngilizcede veri çekme işlemleri için bu ifade daha yaygındır.",
-            "motivation": "Harika bir ilerleme kaydediyorsun! 🚀"
-        }
-        """
-
         chat_completion = client.chat.completions.create(
             messages=[
-                {
-                    "role": "system",
-                    "content": system_prompt
-                },
-                {
-                    "role": "user",
-                    "content": f'Evaluate this sentence and return JSON: "{text}"'
-                }
+                {"role": "system", "content": SYSTEM_PROMPT},
+                {"role": "user", "content": USER_TEMPLATE.format(text=text)}
             ],
             model=GROQ_MODEL,
             response_format={"type": "json_object"},
-            temperature=0.5
+            temperature=0.3,   # 0.5 → 0.3: daha tutarlı skorlar için
+            max_tokens=512,    # gereksiz uzun çıktıları önler
         )
-        
+
         response_text = chat_completion.choices[0].message.content
         result = json.loads(response_text)
-        
-        return jsonify({
-            "status": "success",
-            "data": result
-        })
-        
+
+        # Temel alan validasyonu
+        required_keys = {"score", "corrected_sentence", "explanation", "motivation"}
+        if not required_keys.issubset(result.keys()):
+            raise ValueError(f"Missing keys in response: {required_keys - result.keys()}")
+
+        # Score sanity check
+        result["score"] = max(0, min(100, int(result["score"])))
+
+        return jsonify({"status": "success", "data": result})
+
+    except (json.JSONDecodeError, ValueError) as e:
+        return jsonify({"error": "Model returned invalid response", "detail": str(e)}), 502
     except Exception as e:
-        print(f"ANALYZE HATASI: {e}")
-        return jsonify({"error": str(e)}), 500
+        if hasattr(e, 'status_code') and e.status_code == 429:
+            return jsonify({"error": "Günlük limit doldu, yarın tekrar dene"}), 429
+        return jsonify({"error": "Analysis failed", "detail": str(e)}), 500
 
 if __name__ == '__main__':
     app.run(debug=True, port=5050)
