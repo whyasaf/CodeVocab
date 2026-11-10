@@ -7,3 +7,6 @@ instance/
 .env*.local
 .venv/
 venv/
+
+# Tanıtım videoları (repoya gitmez)
+tanitim/
