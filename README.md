@@ -1,10 +1,12 @@
 # 🚀 CodeVocab: Yapay Zeka Destekli İngilizce Cümle Düzeltme
 
-![CodeVocab Logo](static/cv_banner_1.png)
+![CodeVocab](static/cv_banner.png)
 
 **CodeVocab**, İngilizce öğrenen herkes için tasarlanmış, sohbet tabanlı bir cümle düzeltme ve İngilizce mentorudur. İngilizce cümleni yazarsın, CodeVocab onu puanlar, hatanı Türkçe açıklar ve doğrusunu gösterir. Takıldığın yeri sorarsın, sohbetin bağlamını hatırlayarak cevap verir. Kelime moduna geçtiğinde de her kelime için anlık kart üretir.
 
 Tamamen **ücretsiz AI sağlayıcıları** üzerinde çalışır. Birinin kotası dolarsa otomatik olarak diğerine geçer.
+
+🌐 **Canlı:** [codevocab.whyasaf.com](https://codevocab.whyasaf.com)
 
 ---
 
@@ -35,6 +37,8 @@ Tüm sağlayıcılar OpenAI uyumlu API sunduğu için tek bir `openai` istemcisi
 | 4    | Cerebras    | `qwen-3.8-27b`          | Sadece $5 deneme kredisi, sonrası ücretli.                          |
 | 5    | Groq (mini) | `openai/gpt-oss-20b`    | Aynı Groq anahtarı, **ayrı kota**. Son yedek, kalitesi daha düşük. |
 
+**Kötüye kullanım koruması:** AI uç noktaları IP başına dakikada 15, saatte 200 istekle sınırlıdır (`RATE_LIMITS`, [app.py](app.py)). Böylece biri script ile tüm ücretsiz kotaları bitiremez.
+
 > Ücretsiz modeller zaman zaman kaldırılıyor. Örneğin Groq, `llama-3.3-70b-versatile` modelini Ağustos 2026'da kaldırdı. Bir model kaybolursa kod değiştirmen gerekmez, `.env` dosyasında `GROQ_MODEL=...` gibi bir satırla yenisini yazman yeterli.
 
 ---
@@ -43,7 +47,7 @@ Tüm sağlayıcılar OpenAI uyumlu API sunduğu için tek bir `openai` istemcisi
 
 | Kategori       | Teknoloji                                           |
 | :------------- | :-------------------------------------------------- |
-| **Backend**    | Python 3.12, Flask, SQLite (3000 kelimelik havuz)   |
+| **Backend**    | Python 3.12, Flask, SQLite (2.700+ kelimelik havuz)   |
 | **AI**         | Groq / Cerebras / Gemini / OpenRouter (`openai` SDK) |
 | **Frontend**   | Vanilla JS, modern CSS (Geist font), HTML5          |
 | **Deployment** | Vercel (Serverless Functions)                       |
@@ -52,9 +56,13 @@ Tüm sağlayıcılar OpenAI uyumlu API sunduğu için tek bir `openai` istemcisi
 
 ## 📸 Ekranlar
 
-|            **Ana ekran**             |           **Cümle analizi + takip sorusu**           |            **Kelime kartı**            |
-| :----------------------------------: | :--------------------------------------------------: | :------------------------------------: |
-| ![Ana ekran](static/cv_ana_ekran.png) | ![Analiz](static/cv_analiz_ekran.png)                | ![Kelime](static/cv_kelime_ekran.png) |
+![Masaüstü ve mobil](static/cv_showcase.png)
+
+|            **Tanıtım sayfası**            |          **Cümle analizi**           |
+| :---------------------------------------: | :----------------------------------: |
+| ![Tanıtım sayfası](static/cv_ana_ekran.png) | ![Analiz](static/cv_analiz_ekran.png) |
+|             **Kelime kartı**              |         **Konu çalış**          |
+|   ![Kelime](static/cv_kelime_ekran.png)   | ![Konu](static/cv_konu_ekran.png) |
 
 ---
 
@@ -88,6 +96,7 @@ static/*_white.png  Logoların koyu tema (beyaz) versiyonları
 templates/_site.html   İçerik sayfalarının ortak iskeleti (nav + footer)
 templates/_macros.html Tema'ya göre logo seçen makro ve ortak <head>
 vocab.db          Kelime havuzu (data_loader.py + database_setup.py ile üretilir)
+excluded_words.txt Havuza alınmayan özel isimler, markalar ve anlamsız kelimeler
 ```
 
 ---

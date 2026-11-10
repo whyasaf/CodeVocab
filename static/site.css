@@ -296,6 +296,136 @@ body {
   color: var(--text);
 }
 
+.editorial p + p {
+  margin-top: 16px;
+}
+
+/* ───────────── Zaman çizelgesi (Hakkında) ───────────── */
+
+.timeline {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 20px;
+  margin: 36px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline::before {
+  content: "";
+  position: absolute;
+  top: 7px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(90deg, var(--border-strong), var(--accent));
+}
+
+.timeline li {
+  position: relative;
+  padding-top: 34px;
+}
+
+.timeline li::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 15px;
+  height: 15px;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  background: var(--bg);
+}
+
+.timeline li.is-now::before {
+  border-color: var(--accent);
+  background: var(--accent);
+  box-shadow: 0 0 0 6px var(--accent-soft);
+}
+
+.timeline time {
+  font-family: "Geist Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.timeline li.is-now time {
+  color: var(--accent);
+}
+
+.timeline h3 {
+  margin: 8px 0;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.timeline p {
+  margin: 0;
+  max-width: 320px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+
+.tech-grid.principles {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.tech-grid.principles .tech-item + .tech-item {
+  border-left: 1px solid var(--border);
+}
+
+@media (min-width: 861px) {
+  .tech-grid.principles .tech-item {
+    border-top: 0;
+  }
+
+  .tech-grid.principles .tech-item + .tech-item {
+    border-left: 1px solid var(--border);
+  }
+}
+
+@media (max-width: 860px) {
+  .timeline {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding-left: 32px;
+  }
+
+  .timeline::before {
+    top: 0;
+    bottom: 0;
+    left: 7px;
+    right: auto;
+    width: 1px;
+    height: auto;
+    background: linear-gradient(180deg, var(--border-strong), var(--accent));
+  }
+
+  .timeline li {
+    padding-top: 0;
+  }
+
+  .timeline li::before {
+    left: -32px;
+    top: 2px;
+  }
+
+  .tech-grid.principles {
+    grid-template-columns: 1fr;
+  }
+
+  .tech-grid.principles .tech-item + .tech-item {
+    border-left: 0;
+    border-top: 1px solid var(--border);
+  }
+}
+
 /* ───────────── Tech grid ───────────── */
 
 .tech-grid {

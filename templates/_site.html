@@ -1,6 +1,6 @@
 {# İçerik sayfalarının ortak iskeleti: nav + footer + tema.
    Alt sayfalar: {% extends "_site.html" %} ve {% block content %} doldurur. #}
-{% from "_macros.html" import logo, head_common %}
+{% from "_macros.html" import logo, head_common with context %}
 <!doctype html>
 <html lang="tr" data-theme="dark">
   <head>

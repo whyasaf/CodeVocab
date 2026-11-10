@@ -1,8 +1,8 @@
 {# Koyu temada beyaz, açık temada orijinal logoyu gösterir.
    Kullanım: {{ logo('codevocablogohead', 'CodeVocab', 'brand-mark') }} #}
 {% macro logo(name, alt='', cls='', loading='eager') -%}
-<img src="{{ url_for('static', filename=name ~ '_white.png') }}" alt="{{ alt }}" class="{{ cls }} logo-dark" loading="{{ loading }}" decoding="async" />
-<img src="{{ url_for('static', filename=name ~ '.png') }}" alt="{{ alt }}" class="{{ cls }} logo-light" loading="{{ loading }}" decoding="async" />
+<img src="{{ url_for('static', filename=name ~ '_white.webp') }}" alt="{{ alt }}" class="{{ cls }} logo-dark" loading="{{ loading }}" decoding="async" />
+<img src="{{ url_for('static', filename=name ~ '.webp') }}" alt="{{ alt }}" class="{{ cls }} logo-light" loading="{{ loading }}" decoding="async" />
 {%- endmacro %}
 
 {# Her sayfanın <head> ortak kısmı #}
@@ -12,10 +12,24 @@
 <title>{{ title }}</title>
 <meta name="description" content="{{ description }}" />
 <meta name="theme-color" content="#000000" />
+{%- set page_url = site_url ~ (request.path if request.path != '/' else '/') %}
+<link rel="canonical" href="{{ page_url }}" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="CodeVocab" />
+<meta property="og:locale" content="tr_TR" />
+<meta property="og:url" content="{{ page_url }}" />
 <meta property="og:title" content="{{ title }}" />
 <meta property="og:description" content="{{ description }}" />
-<meta property="og:image" content="{{ url_for('static', filename='cv_banner_1.png', _external=True) }}" />
+<meta property="og:image" content="{{ site_url }}/static/og.png" />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content="CodeVocab: İngilizceni yaz, mentorun düzeltsin." />
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content="{{ title }}" />
+<meta name="twitter:description" content="{{ description }}" />
+<meta name="twitter:image" content="{{ site_url }}/static/og.png" />
 <link rel="icon" type="image/png" href="{{ url_for('static', filename='codevocablogohead.png') }}" />
+<link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />

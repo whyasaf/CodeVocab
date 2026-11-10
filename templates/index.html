@@ -1,4 +1,4 @@
-{% from "_macros.html" import logo, head_common %}
+{% from "_macros.html" import logo, head_common with context %}
 <!doctype html>
 <html lang="tr" data-theme="dark">
   <head>
@@ -139,8 +139,8 @@
 
     <script>
       window.CV_ASSETS = {
-        logoDark: "{{ url_for('static', filename='codevocablogohead_white.png') }}",
-        logoLight: "{{ url_for('static', filename='codevocablogohead.png') }}",
+        logoDark: "{{ url_for('static', filename='codevocablogohead_white.webp') }}",
+        logoLight: "{{ url_for('static', filename='codevocablogohead.webp') }}",
       };
     </script>
     <script src="{{ url_for('static', filename='app.js') }}" defer></script>

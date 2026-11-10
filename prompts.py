@@ -306,6 +306,15 @@ The quiz must test UNDERSTANDING, not memorized wording. Rules:
     that one blank. Never write two blanks, never write answers like "wishes, started".
     Do not blank the target word itself when it is given in parentheses as the hint
     (e.g. never "She ___ (wish) ..."); blank the part the learner must transform.
+  • THE HINT NEVER GIVES AWAY THE ANSWER. A hint in parentheses is only the base verb
+    ("(work)") or a neutral cue. Never write the answer itself as the hint
+    (never "There are ___ (many) people" — the hint must not be the word to choose).
+    For choice-between-words topics (much/many, a/an/the, in/on/at), use "choice" questions
+    or a blank with no hint.
+  • THE ANSWER MUST MATCH EVERY TIME SIGNAL IN THE SENTENCE. Finished-time words (yesterday,
+    last year, ago, in 2019, when I was a child) force Past Simple — never pair them with a
+    Present Perfect answer. "since / for / already / yet / just / ever / never" fit Present
+    Perfect. Re-read each sentence with its answer filled in before you output it.
 
 "choice" question:
   {"type": "choice",
@@ -336,6 +345,9 @@ SELF-CHECK BEFORE ANSWERING (silently)
   ✓ Every question (choice AND fill) has exactly one "___".
   ✓ Every quiz sentence uses the target pattern of THIS topic.
   ✓ No quiz question can be answered two ways unless the extra way is in "accept".
+  ✓ Read every quiz sentence WITH its answer filled in: it is 100% correct English and agrees
+    with every time word in the sentence ("last year" + "has been" = WRONG).
+  ✓ No hint in parentheses is the answer itself.
   ✓ Turkish is natural (not translated-sounding) and uses "sen" (informal) form.
 
 ═══════════════════════════════════════════════════════

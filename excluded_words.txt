@@ -1,0 +1,33 @@
+# Kelime havuzundan çıkarılan kelimeler: özel isimler, yer adları, markalar,
+# kısaltmalar ve web'den kalan anlamsız/uygunsuz girdiler.
+# data_loader.py bu listeyi okur; satır başına bir kelime, # ile yorum.
+
+# Kişi adları
+david michael robert george thomas william richard chris charles steve scott johnson jones louis
+williams jesus christ jackson andrew joseph brian davis daniel taylor wilson stephen kevin anderson
+edward howard allen jennifer antonio sarah lincoln jason bruce simon moore patrick barbara marshall
+susan adams hamilton lawrence matthew anthony douglas madison wayne harris richmond russell clinton
+thompson arthur gordon simpson keith linda jonathan campbell jessica stewart donald roberts craig
+johnny karen albert margaret samuel marie charlie dennis francis philip kennedy mitchell victoria
+peter martin harry kelly jordan lewis clark morgan franklin larry steven roger kerry maria terry
+jerry laura billy nancy carter jimmy graham barry warren vincent walter ralph morris henry
+
+# Yer adları
+london france europe germany india florida africa england virginia chicago mexico carolina italy
+ireland spain georgia columbia vegas illinois zealand kansas santa israel arizona oregon houston
+ontario seattle indiana hawaii atlanta dakota diego maryland scotland dallas alaska korea austin
+toronto missouri miami oklahoma austria alabama kentucky orlando maine sydney sweden nevada thailand
+belgium denver arkansas britain portland idaho oxford taiwan greece nebraska pakistan egypt norway
+vermont denmark puerto delaware poland detroit tampa portugal wyoming columbus rhode alberta dublin
+ukraine hungary bulgaria tokyo cyprus saudi bristol kenya quebec glasgow lebanon montreal memphis
+harvard texas america orleans malaysia vietnam
+
+# Markalar ve ürünler
+linux google paypal nokia amazon samsung motorola pubmed intel disney ericsson mysql epinions toshiba
+siemens medline nintendo hilton debian epson toyota firefox twiki philips nikon compaq packard eminem
+titans
+
+# Kısaltmalar, teknik/argo parçalar ve web kalıntıları
+multi keywords keyword username sitemap stats bytes devel weblog const trans config wishlist trembl
+struct deutsch gonna womens
+nutten dicke livecam cialis holdem babes thongs lesbian lesbians latina webcam ringtone spyware

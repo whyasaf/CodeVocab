@@ -1,62 +1,17 @@
 {% extends "_site.html" %}
 {% from "_macros.html" import logo %}
 {% set page_title = "Hakkında" %}
-{% set page_description = "CodeVocab, İngilizce öğrenen herkes için yapay zeka destekli, sohbet tabanlı bir cümle düzeltme ve İngilizce mentorudur. whyasaf tarafından geliştirildi." %}
+{% set page_description = "CodeVocab'ın hikâyesi: bir ilk yazılım projesinden, İngilizce öğrenen herkes için ücretsiz bir yapay zeka mentoruna. whyasaf tarafından geliştirildi." %}
 
 {% block content %}
 <section class="page-hero">
   <div class="shell">
-    <span class="pill"><span class="pill-dot"></span>Hakkında &amp; Vizyon</span>
-    <h1>Statik listeleri çöpe attık. Öğrenmeyi bir sohbete çevirdik.</h1>
+    <span class="pill"><span class="pill-dot"></span>Hakkında</span>
+    <h1>Tek bir sorudan doğdu: "Bunu doğru mu yazdım?"</h1>
     <p class="lead">
-      CodeVocab, geliştirici <strong>whyasaf</strong>'ın ilk yazılım projesi olarak başladı. Bugün İngilizce öğrenen herkes için
-      sohbet tabanlı bir İngilizce mentoru: ezber listeleri yerine anlık, bağlama dayalı ve tamamen dinamik.
+      CodeVocab, <strong>Ömer Asaf Ak (whyasaf)</strong>'ın ilk yazılım projesi. Basit bir kelime uygulaması olarak
+      başladı, bugün İngilizce öğrenen herkes için ücretsiz bir yapay zeka mentoru.
     </p>
-    <div class="hero-actions">
-      <a class="btn btn-primary btn-lg" href="/app">Hemen dene</a>
-      <a class="btn btn-outline btn-lg" href="/guide">Nasıl çalışır?</a>
-    </div>
-  </div>
-</section>
-
-<section class="section">
-  <div class="shell">
-    <p class="eyebrow">Ne yapar?</p>
-    <h2 class="section-title">Tek bir sohbet, üç alışkanlık.</h2>
-
-    <div class="feature-grid">
-      <article class="feature">
-        <span class="feature-num">01</span>
-        {{ logo('cvai', 'codvo AI', 'feature-logo', 'lazy') }}
-        <h3>Cümle Analizi</h3>
-        <p>
-          İngilizce bir cümle yaz; mentor onu 100 üzerinden puanlar, yanlış kelimeleri üstü çizili, doğrularını yeşil
-          gösterir ve nedenini Türkçe açıklar. "Neden böyle?" diye sorabilir, sohbete devam edebilirsin.
-        </p>
-      </article>
-
-      <article class="feature">
-        <span class="feature-num">02</span>
-        {{ logo('codevocablogohunt', 'Vocab Hunter', 'feature-logo', 'lazy') }}
-        <h3>Kelime Avcısı</h3>
-        <p>
-          Rastgele bir seçki iste ya da merak ettiğin kelimeyi yaz. Anlamı, IPA telaffuzu, A1'den C1'e üç örnek cümle ve
-          Türklerin sık yaptığı hataya dair bir ipucu saniyeler içinde hazır.
-        </p>
-      </article>
-
-      <article class="feature">
-        <span class="feature-num">03</span>
-        <span class="feature-icon">
-          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M4 19.5V5a2 2 0 0 1 2-2h13v16H6.5A2.5 2.5 0 0 0 4 21.5Z" /><path d="m9 10 2 2 4-4" /></svg>
-        </span>
-        <h3>Öğrenilenler &amp; Geçmiş</h3>
-        <p>
-          "Biliyorum" dediğin kelimeler bir daha karşına çıkmaz. Tüm sohbetlerin kenar çubuğunda tarihe göre durur.
-          Hesap yok, sunucu yok: her şey kendi tarayıcında.
-        </p>
-      </article>
-    </div>
   </div>
 </section>
 
@@ -64,14 +19,69 @@
   <div class="shell">
     <div class="editorial">
       <div>
-        <p class="eyebrow">Tasarım felsefesi</p>
-        <h2 class="section-title">Temiz, cesur, sade.</h2>
+        <p class="eyebrow">Neden?</p>
+        <h2 class="section-title">Şüpheyi bitirmek için.</h2>
       </div>
-      <p>
-        Arayüz gereksiz renklerden, dekoratif çerçevelerden ve karmaşık menülerden uzak durur. Siyah bir tuval, büyük
-        tipografi, ferah boşluklar ve <em>tek bir pembe imza</em>. Tasarım dikkatini dağıtmaz, seni yazdığın cümleye
-        geri getirir.
-      </p>
+      <div>
+        <p>
+          İngilizce öğrenirken en yorucu an, bir cümleyi yazıp doğru olup olmadığından emin olamadığın andır. Çeviri
+          araçları cümleni değiştirir ama nedenini söylemez. Kelime listeleri ezberletir ama kullanmayı öğretmez.
+        </p>
+        <p>
+          CodeVocab'ın tek bir işi var: cümlen yanlışsa <em>neden</em> yanlış olduğunu Türkçe anlatmak, doğruysa ona
+          hiç dokunmamak.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell">
+    <p class="eyebrow">Yolculuk</p>
+    <h2 class="section-title">Üç sürüm, bir yıl.</h2>
+
+    <ol class="timeline">
+      <li>
+        <time>Şubat 2026</time>
+        <h3>v1 · İlk adım</h3>
+        <p>3.000 kelimelik havuz ve Gemini ile ilk sürüm yayında. Kelime kartları ve basit cümle kontrolü.</p>
+      </li>
+      <li>
+        <time>Nisan 2026</time>
+        <h3>v2 · Daha hızlı yapay zeka</h3>
+        <p>Ücretsiz kotalar çabuk dolunca Groq'a geçiş. Mentor prompt'u baştan yazıldı, analizler netleşti.</p>
+      </li>
+      <li class="is-now">
+        <time>Kasım 2026</time>
+        <h3>v3 · Sohbet eden bir mentor</h3>
+        <p>
+          Sohbet arayüzü ve geçmiş, "Konu çalış" modu ve quiz'ler, otomatik yedekli ücretsiz AI zinciri ve baştan sona
+          yeni tasarım.
+        </p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell">
+    <p class="eyebrow">İlkeler</p>
+    <h2 class="section-title">Değişmeyecek üç şey.</h2>
+
+    <div class="tech-grid principles">
+      <div class="tech-item">
+        <h3>Ücretsiz kalacak</h3>
+        <p>Kayıt yok, abonelik yok, reklam yok. Altyapı tamamen ücretsiz AI katmanları üzerinde çalışır.</p>
+      </div>
+      <div class="tech-item">
+        <h3>Senin verin, senin cihazın</h3>
+        <p>Sohbetlerin ve ilerlemen sunucuda değil, kendi tarayıcında saklanır.</p>
+      </div>
+      <div class="tech-item">
+        <h3>Doğruya dokunma</h3>
+        <p>Doğru ve doğal bir cümle her zaman 100 alır. Mentor "daha iyisi" diye gereksiz değişiklik önermez.</p>
+      </div>
     </div>
   </div>
 </section>
@@ -81,8 +91,7 @@
     <p class="eyebrow">Teknoloji</p>
     <h2 class="section-title">Arkasındaki motor.</h2>
     <p class="section-lead">
-      Tamamen ücretsiz altyapı. Bir AI sağlayıcısının kotası dolarsa istek otomatik olarak sıradakine geçer; sen bir şey
-      fark etmezsin.
+      Bir AI sağlayıcısının kotası dolarsa istek otomatik olarak sıradakine geçer; sen bir şey fark etmezsin.
     </p>
 
     <div class="tech-grid">
@@ -96,17 +105,17 @@
       </div>
       <div class="tech-item">
         <h3>Vanilla JS</h3>
-        <p>Framework yok. Sohbet arayüzü saf JavaScript ve modern CSS ile yazıldı.</p>
+        <p>Framework yok. Arayüz saf JavaScript ve modern CSS ile yazıldı.</p>
       </div>
       <div class="tech-item">
         <h3>SQLite</h3>
-        <p>3.000 kelimelik havuz için hafif, taşınabilir ve salt-okunur veritabanı.</p>
+        <p>2.700+ kelimelik havuz için hafif, taşınabilir ve salt okunur veritabanı.</p>
       </div>
     </div>
 
     <div class="stats">
-      <div class="stat"><b>3.000</b><span>kelimelik havuz</span></div>
-      <div class="stat"><b>4</b><span>ücretsiz AI sağlayıcısı</span></div>
+      <div class="stat"><b>2.700+</b><span>kelimelik havuz</span></div>
+      <div class="stat"><b>3</b><span>ücretsiz AI sağlayıcısı</span></div>
       <div class="stat"><b>0</b><span>sunucuda saklanan kişisel veri</span></div>
     </div>
   </div>

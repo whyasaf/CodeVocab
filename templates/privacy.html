@@ -31,6 +31,15 @@
       CodeVocab, kullanıcılarından isim, soyisim, e-posta veya telefon numarası gibi doğrudan kimlik belirleyici
       veriler talep etmez ve toplamaz. Kayıt sistemi bulunmamaktadır.
     </p>
+    <p>
+      Ücretsiz yapay zeka kotalarının kötüye kullanılmasını önlemek için, istek gönderen IP adresi ve isteğin zamanı
+      en fazla <strong>1 saat</strong> boyunca yalnızca sunucu belleğinde tutulur. Bu bilgi bir veritabanına ya da
+      dosyaya yazılmaz, başka bir amaçla kullanılmaz ve süre dolunca kendiliğinden silinir.
+    </p>
+    <p>
+      Uygulamayı daha önce açtığınızı hatırlamak için tarayıcınıza <code>cv_app</code> adlı bir çerez yazılır. Bu çerez
+      sizi tanımlamaz; yalnızca ana sayfaya girdiğinizde sizi doğrudan uygulamaya yönlendirmek için kullanılır.
+    </p>
 
     <h2>3. Yerel depolama (LocalStorage)</h2>
     <p>
@@ -47,7 +56,7 @@
     <h2>4. Yapay zeka ve API entegrasyonu</h2>
     <p>
       Analiz için yazdığınız metinler ve istediğiniz kelimeler, anlık olarak üçüncü taraf yapay zeka sağlayıcılarından
-      birine (Groq, Cerebras, Google Gemini veya OpenRouter) iletilir. Bir sohbette devam ettiğinizde, bağlam sağlamak
+      birine (Groq, Google Gemini veya OpenRouter) iletilir. Bir sohbette devam ettiğinizde, bağlam sağlamak
       için aynı sohbetteki son birkaç mesaj da isteğe eklenir. CodeVocab sunucusu bu metinleri kaydetmez.
     </p>
     <div class="callout warn">
@@ -61,8 +70,8 @@
 
     <h2>5. Çerezler</h2>
     <p>
-      CodeVocab, reklam veya takip amaçlı üçüncü taraf çerezleri kullanmaz. Sadece uygulamanın temel işlevselliği için
-      gerekli olan yerel depolama kullanılır.
+      CodeVocab, reklam veya takip amaçlı üçüncü taraf çerezleri kullanmaz. Uygulamanın temel işlevselliği için yerel
+      depolama ve yukarıda açıklanan tek bir yönlendirme çerezi (<code>cv_app</code>) kullanılır.
     </p>
 
     <h2>6. İletişim</h2>

@@ -1,13 +1,17 @@
+import hashlib
 import json
 import os
 import re
 import sqlite3
-from collections import OrderedDict
+import threading
+import time
+from collections import OrderedDict, deque
+from functools import wraps
 
 from dotenv import load_dotenv
 from urllib.parse import urlencode, urlparse
 
-from flask import Flask, jsonify, make_response, redirect, render_template, request
+from flask import Flask, Response, jsonify, make_response, redirect, render_template, request
 
 load_dotenv()
 
@@ -31,6 +35,91 @@ MAX_KNOWN_WORDS = 3000
 SKIP_MOST_COMMON = 150   # "the", "would" gibi en temel kelimeleri havuzdan çıkar
 WORD_RE = re.compile(r"^[A-Za-z][A-Za-z'\- ]{0,39}$")
 MAX_TOPIC_LEN = 80
+SITE_URL = os.getenv("SITE_URL", "https://codevocab.whyasaf.com").rstrip("/")
+
+# Kötüye kullanıma karşı IP başına AI isteği sınırı (pencere saniyesi, izin verilen istek)
+RATE_LIMITS = ((60, 15), (3600, 200))
+
+
+# ───────────── Statik dosya sürümleme ─────────────
+# url_for('static', ...) adreslerine dosya içeriğinin kısa özetini ekler (?v=ab12cd34).
+# Dosya değişince adres de değişir; tarayıcı eski CSS/JS'i asla kullanmaz.
+_hash_cache = {}
+
+
+def _static_hash(filename):
+    path = os.path.join(app.static_folder, filename)
+    try:
+        mtime = os.path.getmtime(path)
+    except OSError:
+        return None
+    cached = _hash_cache.get(filename)
+    if cached and cached[0] == mtime:
+        return cached[1]
+    with open(path, "rb") as f:
+        digest = hashlib.md5(f.read()).hexdigest()[:8]
+    _hash_cache[filename] = (mtime, digest)
+    return digest
+
+
+@app.url_defaults
+def _version_static(endpoint, values):
+    if endpoint == "static" and "filename" in values and "v" not in values:
+        digest = _static_hash(values["filename"])
+        if digest:
+            values["v"] = digest
+
+
+@app.after_request
+def _cache_headers(resp):
+    # Sürümlü statik dosyalar bir yıl önbellekte kalabilir; adres değişince yenisi iner.
+    if request.path.startswith("/static/") and request.args.get("v") and resp.status_code == 200:
+        resp.headers["Cache-Control"] = "public, max-age=31536000, immutable"
+    return resp
+
+
+@app.context_processor
+def _site_context():
+    return {"site_url": SITE_URL}
+
+
+# ───────────── İstek sınırı ─────────────
+_hits = {}
+_hits_lock = threading.Lock()
+
+
+def _client_ip():
+    fwd = request.headers.get("X-Forwarded-For", "")
+    return (fwd.split(",")[0].strip() or request.headers.get("X-Real-IP") or request.remote_addr or "?")
+
+
+def rate_limited(view):
+    @wraps(view)
+    def wrapper(*args, **kwargs):
+        now = time.time()
+        longest = max(w for w, _ in RATE_LIMITS)
+        with _hits_lock:
+            if len(_hits) > 5000:  # bellek koruması: eski kayıtları at
+                for k in [k for k, q in _hits.items() if not q or now - q[-1] > longest]:
+                    del _hits[k]
+            q = _hits.setdefault(_client_ip(), deque())
+            while q and now - q[0] > longest:
+                q.popleft()
+            for window, limit in RATE_LIMITS:
+                if sum(1 for t in q if now - t <= window) >= limit:
+                    msg = (
+                        "Biraz hızlı gidiyorsun. Bir dakika bekleyip tekrar dene."
+                        if window <= 60
+                        else "Bu saatlik istek sınırına ulaştın. Biraz ara verip sonra devam edebilirsin."
+                    )
+                    resp = jsonify({"error": msg})
+                    resp.status_code = 429
+                    resp.headers["Retry-After"] = str(window if window > 60 else 60)
+                    return resp
+            q.append(now)
+        return view(*args, **kwargs)
+
+    return wrapper
 
 
 class LRUCache(OrderedDict):
@@ -116,6 +205,20 @@ def guide():
     return render_template("guide.html")
 
 
+@app.route("/robots.txt")
+def robots():
+    body = f"User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /app\n\nSitemap: {SITE_URL}/sitemap.xml\n"
+    return Response(body, mimetype="text/plain")
+
+
+@app.route("/sitemap.xml")
+def sitemap():
+    pages = [("/", "1.0"), ("/guide", "0.8"), ("/about", "0.6"), ("/privacy", "0.3"), ("/terms", "0.3")]
+    urls = "".join(f"<url><loc>{SITE_URL}{p}</loc><priority>{pr}</priority></url>" for p, pr in pages)
+    xml = f'<?xml version="1.0" encoding="UTF-8"?><urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">{urls}</urlset>'
+    return Response(xml, mimetype="application/xml")
+
+
 # ───────────────────────── API ─────────────────────────
 
 @app.route("/api/health")
@@ -156,6 +259,7 @@ def get_random_words():
 
 
 @app.route("/api/word_details")
+@rate_limited
 def word_details():
     word = (request.args.get("word") or "").strip().lower()
     if not word or not WORD_RE.match(word):
@@ -207,6 +311,7 @@ def _clean_history(raw):
 
 
 @app.route("/api/analyze", methods=["POST"])
+@rate_limited
 def analyze():
     data = request.get_json(silent=True) or {}
     text = str(data.get("text", "")).strip()
@@ -335,6 +440,7 @@ def _read_topic():
 
 
 @app.route("/api/topic", methods=["POST"])
+@rate_limited
 def topic_lesson():
     topic, err = _read_topic()
     if err:
@@ -372,6 +478,7 @@ def topic_lesson():
 
 
 @app.route("/api/topic_quiz", methods=["POST"])
+@rate_limited
 def topic_quiz():
     topic, err = _read_topic()
     if err:
