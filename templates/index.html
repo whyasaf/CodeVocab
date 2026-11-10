@@ -1,796 +1,148 @@
+{% from "_macros.html" import logo, head_common %}
 <!doctype html>
-<html lang="en">
+<html lang="tr" data-theme="dark">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Ana Sayfa - CodeVocab</title>
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      rel="icon"
-      type="image/png"
-      href="{{ url_for('static', filename='codevocablogohead.png') }}"
-    />
+    {{ head_common("CodeVocab — Uygulama", "İngilizce cümleni yaz, bir mentor gibi düzeltelim. Kelime öğren, konu çalış, takıldığın yeri sor. Ücretsiz.") }}
+    <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}" />
   </head>
 
-  <body data-section="landing-section">
-    <div class="app-background" aria-hidden="true">
-      <div class="bg-orb bg-orb-one"></div>
-      <div class="bg-orb bg-orb-two"></div>
+  <body>
+    <div class="app is-empty" id="app">
+      <!-- ───────────── Sidebar ───────────── -->
+      <aside class="sidebar" id="sidebar" aria-label="Sohbetler">
+        <div class="sidebar-top">
+          <a class="brand" href="/" aria-label="CodeVocab tanıtım sayfası">
+            {{ logo('codevocablogohead', '', 'brand-mark') }}
+            {{ logo('cv_hero', 'CodeVocab', 'brand-word') }}
+          </a>
+          <button class="icon-btn only-desktop" data-action="collapse-sidebar" aria-label="Kenar çubuğunu gizle" title="Kenar çubuğunu gizle">
+            <svg viewBox="0 0 24 24" width="18" height="18"><rect x="3" y="4" width="18" height="16" rx="3" /><path d="M9 4v16" /></svg>
+          </button>
+          <button class="icon-btn only-mobile" data-action="close-sidebar" aria-label="Menüyü kapat">
+            <svg viewBox="0 0 24 24" width="18" height="18"><path d="M18 6 6 18M6 6l12 12" /></svg>
+          </button>
+        </div>
+
+        <button class="new-chat-btn" data-action="new-chat">
+          <svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 5v14M5 12h14" /></svg>
+          <span>Yeni sohbet</span>
+          <kbd class="kbd">⌘K</kbd>
+        </button>
+
+        <label class="sidebar-search">
+          <svg viewBox="0 0 24 24" width="14" height="14"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+          <input type="search" id="chat-search" placeholder="Sohbetlerde ara" autocomplete="off" />
+        </label>
+
+        <nav class="chat-list" id="chat-list" aria-label="Geçmiş sohbetler"></nav>
+
+        <div class="sidebar-bottom">
+          <button class="side-link" data-action="open-learned">
+            <svg viewBox="0 0 24 24" width="16" height="16"><path d="M4 19.5V5a2 2 0 0 1 2-2h13v16H6.5A2.5 2.5 0 0 0 4 21.5Z" /><path d="M8 7h7" /></svg>
+            <span>Öğrenilenler</span>
+            <span class="count-badge" id="learned-count">0</span>
+          </button>
+          <button class="side-link" data-action="toggle-theme">
+            <svg viewBox="0 0 24 24" width="16" height="16" class="logo-dark"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
+            <svg viewBox="0 0 24 24" width="16" height="16" class="logo-light"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z" /></svg>
+            <span id="theme-label">Açık tema</span>
+          </button>
+          <div class="side-meta">
+            <a href="/guide">Rehber</a>
+            <a href="/about">Hakkında</a>
+            <a href="/privacy">Gizlilik</a>
+          </div>
+        </div>
+      </aside>
+      <div class="scrim" data-action="close-sidebar"></div>
+
+      <!-- ───────────── Main ───────────── -->
+      <main class="main" id="main">
+        <div class="bg-fx" aria-hidden="true"></div>
+
+        <header class="topbar">
+          <button class="icon-btn only-mobile" data-action="open-sidebar" aria-label="Menüyü aç">
+            <svg viewBox="0 0 24 24" width="18" height="18"><path d="M4 7h16M4 12h16M4 17h10" /></svg>
+          </button>
+          <button class="icon-btn only-desktop" data-action="collapse-sidebar" id="expand-btn" hidden aria-label="Kenar çubuğunu göster" title="Kenar çubuğunu göster">
+            <svg viewBox="0 0 24 24" width="18" height="18"><rect x="3" y="4" width="18" height="16" rx="3" /><path d="M9 4v16" /></svg>
+          </button>
+          <h1 class="topbar-title" id="topbar-title">Yeni sohbet</h1>
+          <span class="only-desktop">{{ logo('cvai', 'codvo AI', 'topbar-logo') }}</span>
+          <button class="icon-btn" data-action="new-chat" aria-label="Yeni sohbet" title="Yeni sohbet">
+            <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+          </button>
+        </header>
+
+        <section class="thread" id="thread" aria-live="polite">
+          <!-- Boş durum -->
+          <div class="hero" id="hero" data-mode="analyze">
+            <h2 class="sr-only">CodeVocab</h2>
+            <span class="hero-mode" data-for="analyze">{{ logo('codevocablogo_dep', 'CodeVocab', 'hero-logo') }}</span>
+            <span class="hero-mode" data-for="word" hidden>{{ logo('codevocablogohunt', 'Vocab Hunter', 'hero-logo is-hunter') }}</span>
+            <span class="hero-mode" data-for="topic" hidden>{{ logo('cvai', 'codvo AI', 'hero-logo is-ai') }}</span>
+            <p class="hero-sub" id="hero-sub">İngilizce cümleni yaz, bir mentor gibi düzeltelim.<br />Takıldığın yeri sor, sohbet ederek öğren.</p>
+            <div class="suggestions" id="suggestions"></div>
+          </div>
+          <div class="messages" id="messages"></div>
+        </section>
+
+        <!-- Composer -->
+        <div class="composer-dock">
+          <form class="composer" id="composer" autocomplete="off">
+            <textarea id="input" rows="1" maxlength="500" placeholder="İngilizce bir cümle yaz ya da bir şey sor…" aria-label="Mesaj"></textarea>
+            <div class="composer-bar">
+              <div class="mode-toggle" role="tablist" aria-label="Mod">
+                <span class="mode-indicator" id="mode-indicator" aria-hidden="true"></span>
+                <button type="button" role="tab" class="mode-btn active" data-mode="analyze" aria-selected="true">
+                  <svg viewBox="0 0 24 24" width="14" height="14"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9Z" /></svg>
+                  Analiz
+                </button>
+                <button type="button" role="tab" class="mode-btn" data-mode="word" aria-selected="false">
+                  <svg viewBox="0 0 24 24" width="14" height="14"><path d="M4 19.5V5a2 2 0 0 1 2-2h13v16H6.5A2.5 2.5 0 0 0 4 21.5Z" /></svg>
+                  Kelime
+                </button>
+                <button type="button" role="tab" class="mode-btn" data-mode="topic" aria-selected="false">
+                  <svg viewBox="0 0 24 24" width="14" height="14"><path d="M22 10 12 5 2 10l10 5 10-5Z" /><path d="M6 12v5c3 2 9 2 12 0v-5" /></svg>
+                  Konu
+                </button>
+              </div>
+              <div class="composer-right">
+                <button type="button" class="ghost-btn" id="random-btn" hidden data-action="random-words">
+                  <svg viewBox="0 0 24 24" width="14" height="14"><rect x="3" y="3" width="18" height="18" rx="4" /><circle cx="8.5" cy="8.5" r="1.2" /><circle cx="15.5" cy="15.5" r="1.2" /><circle cx="12" cy="12" r="1.2" /></svg>
+                  Rastgele
+                </button>
+                <span class="char-count" id="char-count"></span>
+                <button type="submit" class="send-btn" id="send-btn" aria-label="Gönder" disabled>
+                  <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 19V5M5 12l7-7 7 7" /></svg>
+                </button>
+              </div>
+            </div>
+          </form>
+          <p class="disclaimer">CodeVocab hata yapabilir. Sohbetler yalnızca bu tarayıcıda saklanır.</p>
+        </div>
+      </main>
     </div>
 
-    <div
-      class="toast-stack"
-      id="toast-stack"
-      aria-live="polite"
-      aria-atomic="true"
-    ></div>
-
-    <nav class="cv-navbar" id="cv-navbar">
-      <a
-        class="cv-navbar-brand"
-        href="/"
-        onclick="
-          event.preventDefault();
-          showSection('landing-section');
-        "
-      >
-        <img
-          src="{{ url_for('static', filename='codevocablogohead.png') }}"
-          alt="CodeVocab"
-          class="nav-logo"
-        />
-      </a>
-      <div class="cv-navbar-links">
-        <button class="cv-nav-btn" onclick="openPanel('learned')">
-          Öğrenilenler
-        </button>
-        <a class="cv-nav-btn" href="/about">Hakkında</a>
-      </div>
-    </nav>
-
-    <div
-      class="cv-panel-overlay"
-      id="cv-panel-overlay"
-      onclick="closePanel()"
-    ></div>
-    <aside class="cv-side-panel" id="cv-side-panel">
-      <div class="cv-panel-header">
-        <h2 class="cv-panel-title" id="cv-panel-title">Panel</h2>
-        <button
-          class="cv-panel-close"
-          onclick="closePanel()"
-          aria-label="Kapat"
-        >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2.4"
-            stroke-linecap="round"
-          >
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
+    <!-- Öğrenilenler modalı -->
+    <dialog class="modal" id="learned-modal" aria-labelledby="learned-title">
+      <div class="modal-head">
+        <h2 id="learned-title">Öğrenilenler</h2>
+        <button class="icon-btn" data-action="close-modal" aria-label="Kapat">
+          <svg viewBox="0 0 24 24" width="18" height="18"><path d="M18 6 6 18M6 6l12 12" /></svg>
         </button>
       </div>
-      <div class="cv-panel-body" id="cv-panel-body"></div>
-    </aside>
+      <div class="modal-body" id="learned-body"></div>
+    </dialog>
 
-    <section id="landing-section" class="active">
-      <div class="section-shell hero-layout">
-        <div class="hero-copy">
-          <p class="eyebrow">CodeVocab / Premium English Workflow</p>
-          <h1>
-            Kelime öğrenme ve cümle analizini tek, rafine bir web deneyimine
-            taşı.
-          </h1>
-          <p class="section-intro">
-            Daha büyük tipografi, daha fazla boşluk ve daha temiz ekran
-            mimarisiyle çalışmaya odaklan.
-          </p>
-          <div class="hero-actions">
-            <button
-              class="btn btn-primary"
-              onclick="showSection('mode-selection')"
-            >
-              Başla
-            </button>
-          </div>
-        </div>
-
-        <div class="hero-panel">
-          <div class="hero-panel-inner">
-            <img
-              src="{{ url_for('static', filename='codevocablogo_dep.png') }}"
-              alt="CodeVocab Logo"
-              class="hero-logo"
-            />
-            <p class="hero-caption">
-              Vocabulary discovery and AI-guided correction in one minimalist
-              workspace.
-            </p>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <section id="mode-selection">
-      <div class="topbar">
-        <button class="nav-link" onclick="showSection('landing-section')">
-          ← Geri
-        </button>
-      </div>
-
-      <div class="section-shell section-layout">
-        <div class="section-heading">
-          <p class="eyebrow">Mode Selection</p>
-          <h1>Çalışma modunu seç ve dikkatini tek akışa ver.</h1>
-          <p class="section-intro">
-            Her alan ayrı bir görev için optimize edildi: hızlı kelime keşfi ya
-            da sakin bir analiz sohbeti.
-          </p>
-        </div>
-
-        <div class="mode-grid">
-          <article class="mode-card" onclick="startVocabHunter()">
-            <div class="mode-card-head">
-              <span class="mode-number">01</span>
-              <img
-                src="{{ url_for('static', filename='codevocablogohunt.png') }}"
-                alt="Kelime Avcısı"
-                class="mode-logo"
-              />
-            </div>
-            <div class="mode-card-body">
-              <h2>Kelime Avcısı</h2>
-              <p>
-                Bilinen kelimeleri dışarıda bırakan, temiz seçim etiketleri ve
-                geniş detay paneliyle çalışan öğrenme alanı.
-              </p>
-              <span class="mode-link">Kelime havuzuna geç</span>
-            </div>
-          </article>
-
-          <article class="mode-card" onclick="startSmartAnalyzer()">
-            <div class="mode-card-head">
-              <span class="mode-number">02</span>
-              <img
-                src="{{ url_for('static', filename='cvai.png') }}"
-                alt="Cümle Analizi"
-                class="mode-logo"
-              />
-            </div>
-            <div class="mode-card-body">
-              <h2>Cümle Analizi</h2>
-              <p>
-                Mesaj odaklı, modern konuşma düzeninde çalışan ve düzeltmeleri
-                net biçimde gösteren analiz ekranı.
-              </p>
-              <span class="mode-link">Analiz ekranını aç</span>
-            </div>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section id="vocab-hunter">
-      <div class="topbar">
-        <button class="nav-link" onclick="showSection('mode-selection')">
-          ← Ana Menü
-        </button>
-      </div>
-
-      <div class="section-shell section-layout section-layout-spacious">
-        <div class="section-heading">
-          <p class="eyebrow">Vocab Hunter</p>
-          <h1>Yeni kelimeleri sade bir seçim akışıyla keşfet.</h1>
-          <p class="section-intro">
-            Önce seçeneklerden birini seç, sonra detay panelinde anlamı ve örnek
-            kullanımları incele.
-          </p>
-        </div>
-
-        <div class="vocab-stage">
-          <div class="word-toolbar">
-            <div id="word-buttons" class="word-selection-row">
-              <span class="pill-loader" aria-hidden="true"></span>
-              <span class="pill-loader" aria-hidden="true"></span>
-              <span class="pill-loader" aria-hidden="true"></span>
-              <span class="pill-loader" aria-hidden="true"></span>
-              <span class="pill-loader" aria-hidden="true"></span>
-            </div>
-          </div>
-
-          <article id="word-detail-card" class="detail-card hidden">
-            <div class="detail-head">
-              <div class="detail-title-group">
-                <p class="card-kicker">Selected Word</p>
-                <h1 id="detail-word">Word</h1>
-                <span id="detail-phonetic">/phonetic/</span>
-              </div>
-            </div>
-
-            <div class="meaning-chip" id="detail-meaning">Turkish Meaning</div>
-
-            <div class="sentences-list">
-              <div class="sentence-item">
-                <span class="badge a1">A1</span>
-                <p id="sent-a1">...</p>
-              </div>
-              <div class="sentence-item">
-                <span class="badge b1">B1</span>
-                <p id="sent-b1">...</p>
-              </div>
-              <div class="sentence-item">
-                <span class="badge c1">C1</span>
-                <p id="sent-c1">...</p>
-              </div>
-            </div>
-
-            <div class="card-actions">
-              <button
-                class="btn btn-success"
-                onclick="markKnown(window.currentWord)"
-              >
-                Biliyorum
-              </button>
-              <button class="btn btn-secondary" onclick="startVocabHunter()">
-                Sonraki Seçki
-              </button>
-            </div>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <section id="smart-analyzer">
-      <div class="topbar">
-        <button class="nav-link" onclick="showSection('mode-selection')">
-          ← Ana Menü
-        </button>
-        <div class="chat-header-title">
-          <img src="{{ url_for('static', filename='cvai.png') }}" alt="CodeVocab AI" class="chat-header-logo" />
-        </div>
-        <div class="topbar-right-spacer" style="width: 110px;"></div>
-      </div>
-
-      <div class="section-shell section-layout section-layout-chat">
-        <div class="chat-shell chat-shell--empty">
-          <div class="chat-welcome-hero">
-            <h1 class="chat-welcome-title">Hemen başlayalım</h1>
-            <p class="chat-welcome-subtitle">İngilizce cümleni yaz, hemen analiz edelim.</p>
-          </div>
-
-          <div id="chat-window" class="chat-window"></div>
-
-          <div class="chat-composer-wrap">
-            <div class="chat-composer">
-              <input
-                type="text"
-                id="chat-input"
-                placeholder="Cümleni buraya yaz..."
-                onkeypress="handleEnter(event)"
-              />
-              <button class="btn btn-primary composer-send" onclick="sendMessage()">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
-                Analiz Et
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
+    <div class="toast-stack" id="toast-stack" aria-live="assertive"></div>
 
     <script>
-      function setActiveSectionState(id) {
-        document.body.setAttribute("data-section", id);
-      }
-
-      function showSection(id) {
-        document
-          .querySelectorAll("section")
-          .forEach((section) => section.classList.remove("active"));
-        document.getElementById(id).classList.add("active");
-        setActiveSectionState(id);
-
-        window.scrollTo(0, 0);
-
-        let mode = "";
-        if (id === "vocab-hunter") mode = "vocab";
-        else if (id === "smart-analyzer") mode = "chat";
-        else if (id === "mode-selection") mode = "select";
-
-        const newUrl = mode ? `?mode=${mode}` : window.location.pathname;
-        window.history.replaceState({ section: id }, "", newUrl);
-      }
-
-      function showToast(message, type = "error") {
-        const stack = document.getElementById("toast-stack");
-        const toast = document.createElement("div");
-        toast.className = `toast toast-${type}`;
-        toast.textContent = message;
-        stack.appendChild(toast);
-
-        requestAnimationFrame(() => {
-          toast.classList.add("visible");
-        });
-
-        setTimeout(() => {
-          toast.classList.remove("visible");
-          setTimeout(() => toast.remove(), 260);
-        }, 3200);
-      }
-
-      function getKnownWords() {
-        try {
-          const knownWords = JSON.parse(localStorage.getItem("cv_known_words"));
-          return Array.isArray(knownWords) ? knownWords : [];
-        } catch (error) {
-          console.error("Known words could not be read:", error);
-          return [];
-        }
-      }
-
-      function saveKnownWords(words) {
-        localStorage.setItem("cv_known_words", JSON.stringify(words));
-      }
-
-      function renderWordButtonSkeletons() {
-        return `
-                <span class="pill-loader" aria-hidden="true"></span>
-                <span class="pill-loader" aria-hidden="true"></span>
-                <span class="pill-loader" aria-hidden="true"></span>
-                <span class="pill-loader" aria-hidden="true"></span>
-                <span class="pill-loader" aria-hidden="true"></span>
-            `;
-      }
-
-      async function startVocabHunter() {
-        showSection("vocab-hunter");
-
-        const card = document.getElementById("word-detail-card");
-        card.classList.add("hidden");
-        card.classList.remove("card-known");
-
-        const container = document.getElementById("word-buttons");
-        container.innerHTML = renderWordButtonSkeletons();
-
-        try {
-          const knownWords = getKnownWords();
-          const res = await fetch("/api/get_random_words", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ known_words: knownWords }),
-          });
-
-          const words = await res.json();
-
-          if (!res.ok) {
-            throw new Error(words.error || "Kelime listesi alınamadı.");
-          }
-
-          container.innerHTML = "";
-
-          if (!Array.isArray(words) || words.length === 0) {
-            const emptyState = document.createElement("div");
-            emptyState.className = "inline-note";
-            emptyState.textContent = "Gösterilecek yeni kelime bulunamadı.";
-            container.appendChild(emptyState);
-            return;
-          }
-
-          words.forEach((word) => {
-            const btn = document.createElement("button");
-            btn.className = "btn-word";
-            btn.innerText = word;
-            btn.onclick = () => loadWordDetails(word, btn);
-            container.appendChild(btn);
-          });
-        } catch (error) {
-          container.innerHTML =
-            '<div class="inline-note inline-note-error">Kelimeler yüklenemedi.</div>';
-          showToast(error.message || "Kelimeler yüklenirken bir hata oluştu.");
-        }
-      }
-
-      async function loadWordDetails(word, btnElement) {
-        document
-          .querySelectorAll(".btn-word")
-          .forEach((button) => button.classList.remove("active"));
-        btnElement.classList.add("active");
-
-        const card = document.getElementById("word-detail-card");
-        card.classList.remove("hidden");
-        card.classList.remove("card-known");
-        card.dataset.word = word;
-
-        card.querySelector("#detail-word").innerText = "Yükleniyor...";
-        card.querySelector("#detail-phonetic").innerText = "";
-        card.querySelector("#detail-meaning").innerText =
-          "Detaylar hazırlanıyor";
-        card.querySelector("#sent-a1").innerText = "...";
-        card.querySelector("#sent-b1").innerText = "...";
-        card.querySelector("#sent-c1").innerText = "...";
-
-        try {
-          const res = await fetch(
-            `/api/word_details?word=${encodeURIComponent(word)}`,
-          );
-          const data = await res.json();
-
-          if (!res.ok || data.error) {
-            throw new Error(data.error || "Kelime detayı alınamadı.");
-          }
-
-          card.querySelector("#detail-word").innerText = data.word;
-          card.querySelector("#detail-phonetic").innerText =
-            data.phonetic || "";
-          card.querySelector("#detail-meaning").innerText =
-            data.meaning_tr || "Tanım bulunamadı";
-          card.querySelector("#sent-a1").innerText = data.sentences?.A1 || "-";
-          card.querySelector("#sent-b1").innerText = data.sentences?.B1 || "-";
-          card.querySelector("#sent-c1").innerText = data.sentences?.C1 || "-";
-
-          window.currentWord = data.word;
-        } catch (error) {
-          showToast(error.message || "Kelime detayı yüklenemedi.");
-        }
-      }
-
-      async function markKnown(word) {
-        if (!word) word = window.currentWord;
-        if (!word) return;
-
-        try {
-          const knownWords = getKnownWords();
-          if (!knownWords.includes(word)) {
-            knownWords.push(word);
-            saveKnownWords(knownWords);
-          }
-
-          const card = document.getElementById("word-detail-card");
-          if (card && card.dataset.word === word) {
-            card.classList.add("card-known");
-          }
-        } catch (error) {
-          console.error("Error marking known:", error);
-          showToast("Kelime kaydedilemedi.");
-        }
-      }
-
-      function startSmartAnalyzer() {
-        showSection("smart-analyzer");
-        const chatWindow = document.getElementById("chat-window");
-        const chatShell = document.querySelector(".chat-shell");
-        if (chatWindow && chatShell) {
-          chatWindow.innerHTML = "";
-          chatShell.classList.add("chat-shell--empty");
-        }
-        const input = document.getElementById("chat-input");
-        if (input) {
-          setTimeout(() => input.focus(), 120);
-        }
-      }
-
-      function handleEnter(event) {
-        if (event.key === "Enter") sendMessage();
-      }
-
-      function buildAnalyzerResponseHtml(data, originalText) {
-        const isPerfect = data.score >= 95;
-        const isGood = data.score >= 80;
-
-        let statusLabel = "Geliştirilebilir";
-        let statusClass = "analysis-pill-warning";
-        let scoreColor = "#ef6c00";
-        if (isPerfect) {
-          statusLabel = "Mükemmel";
-          statusClass = "analysis-pill-success";
-          scoreColor = "#2e7d32";
-        } else if (isGood) {
-          statusLabel = "Gayet İyi";
-          statusClass = "analysis-pill-info";
-          scoreColor = "#1565c0";
-        }
-
-        const correctedText = data.corrected_sentence || data.corrected;
-
-        let htmlContent = `
-        <div class="analysis-card">
-          <div class="analysis-header">
-            <div class="analysis-score-wrap">
-              <svg class="score-ring" viewBox="0 0 44 44" width="48" height="48">
-                <circle cx="22" cy="22" r="18" fill="none" stroke="#f0f0f0" stroke-width="3.5"/>
-                <circle cx="22" cy="22" r="18" fill="none" stroke="${scoreColor}" stroke-width="3.5"
-                  stroke-dasharray="${(data.score / 100) * 113} 113"
-                  stroke-dashoffset="28.25"
-                  stroke-linecap="round"
-                  transform="rotate(-90 22 22)"
-                  style="transition: stroke-dasharray 0.8s cubic-bezier(0.4,0,0.2,1)"/>
-              </svg>
-              <div class="score-text-group">
-                <span class="analysis-score-value">${data.score}</span>
-                <span class="analysis-score-max">/100</span>
-              </div>
-            </div>
-            <span class="analysis-pill ${statusClass}">${statusLabel}</span>
-          </div>
-        `;
-
-        if (correctedText) {
-          htmlContent += `
-          <div class="analysis-corrected-section">
-            <p class="analysis-label">Önerilen Düzeltme</p>
-            <div class="analysis-corrected-box">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" class="corrected-icon"><polyline points="20 6 9 17 4 12"/></svg>
-              ${correctedText}
-            </div>
-          </div>
-          `;
-        }
-
-        if (data.explanation) {
-          htmlContent += `
-          <div class="analysis-feedback-section">
-            <p class="analysis-label">Mimar Analizi</p>
-            <div class="analysis-explanation">${data.explanation}</div>
-          </div>
-          `;
-        }
-
-        if (data.motivation) {
-          htmlContent += `
-          <div class="analysis-footer">
-            <span class="analysis-motivation-text">${data.motivation}</span>
-          </div>
-          `;
-        }
-
-        htmlContent += `</div>`;
-        return htmlContent;
-      }
-
-      async function sendMessage() {
-        const input = document.getElementById("chat-input");
-        const text = input.value.trim();
-        if (!text) return;
-
-        const chatShell = document.querySelector(".chat-shell");
-        if (chatShell) {
-          chatShell.classList.remove("chat-shell--empty");
-        }
-
-        addMessage(text, "user");
-        input.value = "";
-
-        const loadingId = addMessage(
-          '<div class="typing-indicator"><span></span><span></span><span></span></div>',
-          "ai",
-          true,
-          true,
-        );
-
-        try {
-          const res = await fetch("/api/analyze", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ text: text }),
-          });
-          const response = await res.json();
-
-          const loader = document.getElementById(loadingId);
-          if (loader) loader.remove();
-
-          if (!res.ok || response.status !== "success") {
-            throw new Error(response.error || "Analiz tamamlanamadi.");
-          }
-
-          addMessage(
-            buildAnalyzerResponseHtml(response.data, text),
-            "ai-card",
-            false,
-            true,
-          );
-        } catch (error) {
-          const loader = document.getElementById(loadingId);
-          if (loader) loader.remove();
-          addMessage("Bir hata olustu. Lutfen tekrar dene.", "ai-error");
-          showToast(error.message || "Baglanti hatasi.");
-        }
-      }
-
-      let isInitialLoad = true;
-      setTimeout(() => {
-        isInitialLoad = false;
-      }, 1000);
-
-      function addMessage(text, type, isTemp = false, isHtml = false) {
-        const chat = document.getElementById("chat-window");
-        const isUser = type === "user";
-        const isCard = type === "ai-card";
-        const isError = type === "ai-error";
-
-        const wrapper = document.createElement("div");
-        wrapper.className = `chat-message chat-message--${isUser ? "user" : "ai"}`;
-
-        if (!isUser) {
-          const avatar = document.createElement("div");
-          avatar.className = "chat-avatar chat-avatar--ai";
-          avatar.innerHTML = `<img src="{{ url_for('static', filename='codevocablogohead.png') }}" alt="AI" style="width: 20px; height: 20px; object-fit: contain;" />`;
-          wrapper.appendChild(avatar);
-        }
-
-        const bubble = document.createElement("div");
-        bubble.className = isCard
-          ? "chat-card"
-          : `chat-bubble chat-bubble--${isUser ? "user" : isError ? "error" : "ai"}`;
-
-        if (isHtml) {
-          bubble.innerHTML = text;
-        } else {
-          bubble.innerText = text;
-        }
-
-        wrapper.appendChild(bubble);
-
-        if (isUser) {
-          const avatar = document.createElement("div");
-          avatar.className = "chat-avatar chat-avatar--user";
-          avatar.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>`;
-          wrapper.appendChild(avatar);
-        }
-
-        const id = (isTemp ? "temp-" : "msg-") + Date.now();
-        wrapper.id = id;
-        chat.appendChild(wrapper);
-
-        if (!isInitialLoad) {
-          chat.scrollTo({ top: chat.scrollHeight, behavior: "smooth" });
-        }
-
-        return id;
-      }
-
-      // Legacy alias for any remaining calls
-      function addBubble(text, type, isTemp = false, isHtml = false) {
-        const typeMap = { "user": "user", "ai": "ai", "ai-success": "ai-card", "ai-error": "ai-error" };
-        return addMessage(text, typeMap[type] || type, isTemp, isHtml);
-      }
-
-      function openPanel(mode) {
-        const panel = document.getElementById("cv-side-panel");
-        const overlay = document.getElementById("cv-panel-overlay");
-        const title = document.getElementById("cv-panel-title");
-        const body = document.getElementById("cv-panel-body");
-
-        if (mode === "learned") {
-          title.textContent = "Öğrenilenler";
-          const words = getKnownWords();
-
-          if (words.length === 0) {
-            body.innerHTML =
-              '<p class="cv-panel-empty">Henüz öğrenilmiş bir kelime yok.<br>Kelime Avcısı\'ndan başla!</p>';
-          } else {
-            let html =
-              '<div class="cv-panel-stat">' +
-              words.length +
-              " kelime öğrenildi</div>";
-            html += '<div class="cv-tag-grid">';
-            words.forEach((w) => {
-              html += '<span class="cv-word-tag">' + w + "</span>";
-            });
-            html += "</div>";
-            body.innerHTML = html;
-          }
-        } else if (mode === "about") {
-          title.textContent = "Hakkında";
-          body.innerHTML = `
-                    <div class="cv-about-content">
-                        <p class="cv-about-lead">CodeVocab, statik listeleri çöpe atan, yapay zeka destekli dinamik bir İngilizce öğrenme asistanıdır.</p>
-                        <div class="cv-about-detail">
-                            <p>Her kelime kartı ve cümle analizi <b>Google Gemini AI</b> tarafından anlık üretilir. Ezber yok, tekrar yok — sadece bağlam ve pratik.</p>
-                        </div>
-                        <div class="cv-about-stack">
-                            <span class="cv-stack-tag">Flask</span>
-                            <span class="cv-stack-tag">Gemini AI</span>
-                            <span class="cv-stack-tag">Vanilla JS</span>
-                            <span class="cv-stack-tag">SQLite</span>
-                        </div>
-                    </div>
-                `;
-        }
-
-        panel.classList.add("active");
-        overlay.classList.add("active");
-        document.body.style.overflow = "hidden";
-      }
-
-      function closePanel() {
-        document.getElementById("cv-side-panel").classList.remove("active");
-        document.getElementById("cv-panel-overlay").classList.remove("active");
-        document.body.style.overflow = "";
-      }
-      document.addEventListener("DOMContentLoaded", () => {
-        const params = new URLSearchParams(window.location.search);
-        const mode = params.get("mode");
-
-        if (mode === "vocab") {
-          setTimeout(() => startVocabHunter(), 100);
-        } else if (mode === "chat") {
-          setTimeout(() => startSmartAnalyzer(), 100);
-        } else if (mode === "select") {
-          setTimeout(() => showSection("mode-selection"), 100);
-        }
-      });
+      window.CV_ASSETS = {
+        logoDark: "{{ url_for('static', filename='codevocablogohead_white.png') }}",
+        logoLight: "{{ url_for('static', filename='codevocablogohead.png') }}",
+      };
     </script>
-    <footer class="cv-footer">
-      <div class="cv-footer-top">
-        <div class="cv-footer-brand">
-          <img
-            src="{{ url_for('static', filename='codevocablogo_dep.png') }}"
-            alt="CodeVocab Logo"
-            class="footer-main-logo"
-          />
-          <p class="footer-desc">
-            Yapay zeka destekli, dinamik İngilizce öğrenme asistanı.
-          </p>
-
-          <div class="footer-sub-logos">
-            <a
-              href="https://www.instagram.com/marki.corp/"
-              target="_blank"
-              class="sponsor-link"
-            >
-              <img
-                src="{{ url_for('static', filename='logo_marki.png') }}"
-                alt="Marki Logo123"
-                class="footer-sponsor-logo"
-              />
-            </a>
-
-            <a href="https://whyasaf.com" target="_blank" class="sponsor-link">
-              <img
-                src="{{ url_for('static', filename='whyasaf_logo.png') }}"
-                alt="Whyasaf Logo12"
-                class="footer-sponsor-logo"
-              />
-            </a>
-          </div>
-        </div>
-        <div class="cv-footer-links">
-          <div class="footer-col">
-            <h4>Platform</h4>
-            <a href="/?mode=vocab">Kelime Avcısı</a>
-            <a href="/?mode=chat">Cümle Analizi</a>
-          </div>
-          <div class="footer-col">
-            <h4>Kurumsal</h4>
-            <a href="/about">Hakkında & Vizyon</a>
-            <a href="https://whyasaf.com">Geliştirici (whyasaf)</a>
-            <a href="/guide">Nasıl Kullanılır?</a>
-          </div>
-          <div class="footer-col">
-            <h4>Yasal</h4>
-            <a href="/privacy">Gizlilik Politikası</a>
-            <a href="/terms">Kullanım Koşulları</a>
-          </div>
-        </div>
-      </div>
-      <div class="cv-footer-bottom">
-        <p>
-          CodeVocab 2026 © Tüm hakları saklıdır. Ömer Asaf Ak | whyasaf
-          tarafından tasarlanmış ve kodlanmıştır.
-        </p>
-      </div>
-    </footer>
+    <script src="{{ url_for('static', filename='app.js') }}" defer></script>
   </body>
 </html>

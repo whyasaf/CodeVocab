@@ -1,0 +1,339 @@
+{% extends "_site.html" %}
+{% from "_macros.html" import logo %}
+{% set page_title = "Yapay zeka destekli İngilizce cümle düzeltme" %}
+{% set page_description = "İngilizce cümleni yaz; yapay zeka mentorun puanlasın, hatanı Türkçe açıklasın ve doğrusunu göstersin. Kelime öğren, her gün bir kalıp çalış. Ücretsiz, kayıtsız." %}
+
+{% block head %}
+<link rel="stylesheet" href="{{ url_for('static', filename='home.css') }}" />
+{% endblock %}
+
+{% block content %}
+<!-- ───────────── Hero ───────────── -->
+<section class="lp-hero">
+  <div class="shell">
+    <h1 class="lp-title reveal">
+      İngilizceni yaz.<br />
+      <span class="grad">Mentorun düzeltsin.</span>
+    </h1>
+    <p class="lp-lead reveal">
+      Cümleni yaz; puanını, hatanı ve doğrusunu saniyeler içinde Türkçe açıklamasıyla gör.
+      Takıldığın yeri sor, kelime öğren, her gün bir kalıp çalış.
+    </p>
+
+    <form class="lp-composer reveal" action="/app" method="get" autocomplete="off">
+      <span class="lp-composer-ring" aria-hidden="true"></span>
+      <input name="q" id="lp-input" maxlength="500" required aria-label="İngilizce bir cümle" placeholder="I am living in Istanbul since 5 years." />
+      <button type="submit" class="lp-send" aria-label="Analiz et">
+        <span>Düzelt</span>
+        <svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+      </button>
+    </form>
+    <p class="lp-hint reveal">Bir cümle yaz ve Enter'a bas, ya da <a href="/app">boş bir sohbet aç</a>.</p>
+
+    <!-- Canlı demo -->
+    <div class="demo-stage reveal" id="demo-stage">
+      <div class="demo-glow" aria-hidden="true"></div>
+      <div class="demo" id="demo" aria-label="Örnek analiz" role="img">
+        <div class="demo-bar">
+          <span></span><span></span><span></span>
+          <p>{{ logo('codevocablogohead', '', 'demo-favicon') }} CodeVocab</p>
+        </div>
+        <div class="demo-body">
+          <div class="demo-user"><span id="demo-typed"></span><i class="caret"></i></div>
+          <div class="demo-card" id="demo-card">
+            <div class="demo-score">
+              <svg viewBox="0 0 64 64" class="demo-ring">
+                <circle cx="32" cy="32" r="27" class="track" />
+                <circle cx="32" cy="32" r="27" class="bar" id="demo-bar" />
+              </svg>
+              <b id="demo-num">0</b>
+            </div>
+            <div class="demo-main">
+              <p class="demo-label" id="demo-label">Analiz</p>
+              <p class="demo-diff" id="demo-diff"></p>
+              <p class="demo-note" id="demo-note"></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────── Hata şeridi ───────────── -->
+<section class="lp-section lp-marquee-wrap">
+  <div class="shell">
+    <p class="eyebrow reveal">Türkçe kafayla İngilizce</p>
+    <h2 class="lp-h2 reveal">Bunları sen de yapıyor olabilirsin.</h2>
+  </div>
+  {% set mistakes_a = [
+    ("I am agree", "I agree"), ("Explain me", "Explain to me"), ("I have 25 years old", "I am 25 years old"),
+    ("discuss about it", "discuss it"), ("since 3 years", "for 3 years"), ("I am boring", "I am bored"),
+    ("He go to school", "He goes to school"), ("more better", "much better"), ("listen music", "listen to music"),
+  ] %}
+  {% set mistakes_b = [
+    ("I didn't went", "I didn't go"), ("married with", "married to"), ("I am waiting you", "I am waiting for you"),
+    ("make a photo", "take a photo"), ("How it works?", "How does it work?"), ("informations", "information"),
+    ("when I will arrive", "when I arrive"), ("people is", "people are"), ("a advice", "a piece of advice"),
+  ] %}
+  {% for row, dir in [(mistakes_a, ''), (mistakes_b, 'is-reverse')] %}
+  <div class="marquee {{ dir }}" aria-hidden="{{ 'true' if loop.index > 1 else 'false' }}">
+    <div class="marquee-track">
+      {% for _ in range(2) %}
+      {% for wrong, right in row %}
+      <span class="mistake"><s>{{ wrong }}</s><svg viewBox="0 0 24 24" width="14" height="14"><path d="M5 12h14M13 6l6 6-6 6" /></svg><b>{{ right }}</b></span>
+      {% endfor %}
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</section>
+
+<!-- ───────────── Modlar ───────────── -->
+<section class="lp-section">
+  <div class="shell">
+    <p class="eyebrow reveal">Ne yapar?</p>
+    <h2 class="lp-h2 reveal">Üç mod. Tek sohbet.</h2>
+
+    <div class="bento">
+      <article class="b-card b-wide spot reveal">
+        <div class="b-text">
+          <span class="b-tag">01 · Analiz</span>
+          <h3>Cümleni puanlar, nedenini anlatır.</h3>
+          <p>100 üzerinden puan, kelime kelime fark, Türkçe mentor notu. "Neden böyle?" diye sorup sohbete devam edebilirsin.</p>
+        </div>
+        <div class="b-visual mini-analysis">
+          <div class="mini-score"><b>74</b><span>/100</span></div>
+          <p class="mini-diff">Can you explain <del>me</del> this topic <ins>to me</ins>?</p>
+          <p class="mini-note">"explain" iki nesneyi doğrudan almaz: <strong>explain something to someone</strong>.</p>
+        </div>
+      </article>
+
+      <article class="b-card spot reveal">
+        <span class="b-tag">02 · Kelime</span>
+        <h3>Kelime kartları</h3>
+        <div class="b-visual mini-word">
+          <div class="mw-head"><b>awkward</b><span>/ˈɔːkwərd/</span></div>
+          <p class="mw-tr">garip, tuhaf, rahatsız edici</p>
+          <div class="mw-levels"><span>A1</span><span>B1</span><span>C1</span></div>
+        </div>
+        <p>Anlam, telaffuz, üç seviyede örnek cümle ve Türklerin sık yaptığı hata.</p>
+      </article>
+
+      <article class="b-card spot reveal">
+        <span class="b-tag">03 · Konu</span>
+        <h3>Her gün bir kalıp</h3>
+        <div class="b-visual mini-quiz">
+          <p>I wish I ___ more time.</p>
+          <span class="opt">have</span>
+          <span class="opt ok">had</span>
+          <span class="opt">will have</span>
+        </div>
+        <p>Kısa ders, Türkçe ile karşılaştırma ve 5 soruluk quiz. Skorun kaydedilir.</p>
+      </article>
+
+      <article class="b-card b-wide spot reveal">
+        <div class="b-text">
+          <span class="b-tag">Gizlilik</span>
+          <h3>Hesap yok. Her şey senin tarayıcında.</h3>
+          <p>Sohbetlerin, öğrendiğin kelimeler ve skorların sunucuda değil, sadece kendi cihazında saklanır.</p>
+        </div>
+        <div class="b-visual mini-lock">
+          <svg viewBox="0 0 24 24" width="40" height="40"><rect x="4" y="10" width="16" height="11" rx="3" /><path d="M8 10V7a4 4 0 0 1 8 0v3" /><circle cx="12" cy="15.5" r="1.3" /></svg>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────── Nasıl çalışır ───────────── -->
+<section class="lp-section" id="nasil">
+  <div class="shell">
+    <p class="eyebrow reveal">Nasıl çalışır?</p>
+    <h2 class="lp-h2 reveal">Yaz. Gör. Sor.</h2>
+    <ol class="flow">
+      <li class="reveal"><span class="flow-num">1</span><h3>Yaz</h3><p>Aklına gelen bir İngilizce cümleyi yaz: mesaj, e-posta, ödev, ne olursa.</p></li>
+      <li class="reveal"><span class="flow-num">2</span><h3>Gör</h3><p>Puanını, düzeltilmiş hâlini ve hatanın nedenini Türkçe açıklamayla gör.</p></li>
+      <li class="reveal"><span class="flow-num">3</span><h3>Sor</h3><p>Anlamadığın yeri sor, aynı kalıpla yeni bir cümle kur, tekrar dene.</p></li>
+    </ol>
+  </div>
+</section>
+
+<!-- ───────────── Rakamlar ───────────── -->
+<section class="lp-section">
+  <div class="shell">
+    <div class="lp-stats">
+      <div class="reveal"><b data-count="3000" data-suffix="+">0</b><span>kelimelik havuz</span></div>
+      <div class="reveal"><b data-count="36">0</b><span>hazır konu ve kalıp</span></div>
+      <div class="reveal"><b data-count="0" data-suffix=" ₺">0</b><span>ücret</span></div>
+      <div class="reveal"><b data-count="0">0</b><span>kayıt formu</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ───────────── Son çağrı ───────────── -->
+<section class="lp-section">
+  <div class="shell">
+    <div class="lp-cta spot reveal">
+      <h2>Bugünün ilk cümlesini yaz.</h2>
+      <p>Bir dakikanı al, bir cümle yaz. Gerisini mentorun halleder.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary btn-lg" href="/app">
+          Hemen başla
+          <svg viewBox="0 0 24 24" width="16" height="16"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
+        </a>
+        <a class="btn btn-outline btn-lg" href="/guide">Rehberi oku</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  (function () {
+    var reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+    // Kaydırınca beliren öğeler
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        e.target.classList.add("is-in");
+        io.unobserve(e.target);
+      });
+    }, { rootMargin: "0px 0px -8% 0px" });
+    document.querySelectorAll(".reveal").forEach(function (el, i) {
+      el.style.setProperty("--d", (i % 4) * 70 + "ms");
+      io.observe(el);
+    });
+
+    // Kartlarda imleci takip eden ışık
+    document.querySelectorAll(".spot").forEach(function (card) {
+      card.addEventListener("pointermove", function (e) {
+        var r = card.getBoundingClientRect();
+        card.style.setProperty("--x", e.clientX - r.left + "px");
+        card.style.setProperty("--y", e.clientY - r.top + "px");
+      });
+    });
+
+    // Demo penceresinde hafif 3B eğim
+    var stage = document.getElementById("demo-stage");
+    var demo = document.getElementById("demo");
+    if (!reduce && matchMedia("(hover: hover)").matches) {
+      stage.addEventListener("pointermove", function (e) {
+        var r = stage.getBoundingClientRect();
+        var x = (e.clientX - r.left) / r.width - 0.5;
+        var y = (e.clientY - r.top) / r.height - 0.5;
+        demo.style.transform = "rotateX(" + (-y * 5).toFixed(2) + "deg) rotateY(" + (x * 7).toFixed(2) + "deg)";
+      });
+      stage.addEventListener("pointerleave", function () { demo.style.transform = ""; });
+    }
+
+    // Canlı demo: cümle yazılır, analiz kartı gelir, sıradakine geçilir
+    var EXAMPLES = [
+      {
+        text: "I am living in Istanbul since 5 years.",
+        score: 62,
+        diff: [["", "I "], ["del", "am"], ["ins", "have been"], ["", " living in Istanbul "], ["del", "since"], ["ins", "for"], ["", " 5 years."]],
+        note: "<b>since</b> bir başlangıç noktası ister (since 2020). Süre için <b>for</b> kullanılır; hâlâ süren durum için <b>have been + -ing</b> gerekir.",
+      },
+      {
+        text: "Can you explain me this topic?",
+        score: 74,
+        diff: [["", "Can you explain "], ["del", "me"], ["", " this topic"], ["ins", " to me"], ["", "?"]],
+        note: "<b>explain</b> kişiyi doğrudan nesne olarak almaz: <b>explain something to someone</b>.",
+      },
+      {
+        text: "I look forward to hearing from you.",
+        score: 100,
+        diff: [["", "I look forward to hearing from you."]],
+        note: "Kusursuz. Resmi e-postalar için ideal bir kapanış cümlesi.",
+      },
+    ];
+    var typed = document.getElementById("demo-typed");
+    var card = document.getElementById("demo-card");
+    var bar = document.getElementById("demo-bar");
+    var num = document.getElementById("demo-num");
+    var label = document.getElementById("demo-label");
+    var diffEl = document.getElementById("demo-diff");
+    var noteEl = document.getElementById("demo-note");
+    var CIRC = 2 * Math.PI * 27;
+    bar.style.strokeDasharray = CIRC;
+    bar.style.strokeDashoffset = CIRC;
+
+    var color = function (s) { return s >= 95 ? "var(--good)" : s >= 80 ? "var(--info)" : s >= 60 ? "var(--warn)" : "var(--bad)"; };
+    var labelFor = function (s) { return s >= 95 ? "Mükemmel" : s >= 80 ? "Gayet iyi" : s >= 60 ? "Geliştirilebilir" : "Tekrar dene"; };
+    var wait = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+    var esc = function (s) { return s.replace(/[&<>]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c]; }); };
+
+    function show(ex) {
+      diffEl.innerHTML = ex.diff.map(function (p) {
+        return p[0] ? "<" + p[0] + ">" + esc(p[1]) + "</" + p[0] + ">" : esc(p[1]);
+      }).join("");
+      noteEl.innerHTML = ex.note;
+      label.textContent = labelFor(ex.score);
+      bar.style.stroke = color(ex.score);
+      num.style.color = color(ex.score);
+    }
+
+    function countTo(target, ms) {
+      var start = performance.now();
+      return new Promise(function (done) {
+        (function tick(t) {
+          var k = Math.min(1, (t - start) / ms);
+          num.textContent = Math.round(target * (1 - Math.pow(1 - k, 3)));
+          if (k < 1) requestAnimationFrame(tick); else done();
+        })(start);
+      });
+    }
+
+    async function loop() {
+      var i = 0;
+      for (;;) {
+        var ex = EXAMPLES[i++ % EXAMPLES.length];
+        card.classList.remove("is-on");
+        bar.style.strokeDashoffset = CIRC;
+        num.textContent = "0";
+        typed.textContent = "";
+        await wait(500);
+        for (var c = 1; c <= ex.text.length; c++) {
+          typed.textContent = ex.text.slice(0, c);
+          await wait(28 + Math.random() * 40);
+        }
+        await wait(450);
+        show(ex);
+        card.classList.add("is-on");
+        await wait(250);
+        bar.style.strokeDashoffset = CIRC * (1 - ex.score / 100);
+        await countTo(ex.score, 900);
+        await wait(4200);
+      }
+    }
+
+    if (reduce) {
+      typed.textContent = EXAMPLES[0].text;
+      show(EXAMPLES[0]);
+      card.classList.add("is-on");
+      bar.style.strokeDashoffset = CIRC * (1 - EXAMPLES[0].score / 100);
+      num.textContent = EXAMPLES[0].score;
+    } else {
+      loop();
+    }
+
+    // Rakamlar görünür olunca sayarak artar
+    var statIo = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) {
+        if (!e.isIntersecting) return;
+        statIo.unobserve(e.target);
+        var el = e.target, target = +el.dataset.count, suffix = el.dataset.suffix || "";
+        if (reduce || !target) { el.textContent = target.toLocaleString("tr-TR") + suffix; return; }
+        var start = performance.now();
+        (function tick(t) {
+          var k = Math.min(1, (t - start) / 1400);
+          el.textContent = Math.round(target * (1 - Math.pow(1 - k, 3))).toLocaleString("tr-TR") + suffix;
+          if (k < 1) requestAnimationFrame(tick);
+        })(start);
+      });
+    }, { threshold: 0.6 });
+    document.querySelectorAll("[data-count]").forEach(function (el) { statIo.observe(el); });
+  })();
+</script>
+{% endblock %}

@@ -1,7 +1,9 @@
 .env
-__pyache__/
+__pycache__/
 *.pyc
 instance/
 .DS_Store
 .vercel
 .env*.local
+.venv/
+venv/

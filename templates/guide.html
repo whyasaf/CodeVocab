@@ -1,204 +1,104 @@
-<!doctype html>
-<html lang="tr">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Nasıl Kullanılır? — CodeVocab</title>
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='style.css') }}"
-    />
-    <link
-      rel="stylesheet"
-      href="{{ url_for('static', filename='guide.css') }}"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      rel="icon"
-      type="image/png"
-      href="{{ url_for('static', filename='codevocablogohead.png') }}"
-    />
-  </head>
+{% extends "_site.html" %}
+{% set page_title = "Rehber" %}
+{% set page_description = "CodeVocab nasıl kullanılır? Cümle analizi, kelime modu, sohbet geçmişi ve ipuçları." %}
 
-  <body class="legal-page">
-    <div class="app-background" aria-hidden="true">
-      <div class="bg-orb bg-orb-one"></div>
-      <div class="bg-orb bg-orb-two"></div>
+{% block content %}
+<section class="page-hero">
+  <div class="shell">
+    <span class="pill"><span class="pill-dot"></span>Kullanım rehberi</span>
+    <h1>Beş dakikada CodeVocab.</h1>
+    <p class="lead">Bir sohbet ekranı, üç mod. Yazdığın her şey bir mentorla konuşmak gibi.</p>
+  </div>
+</section>
+
+<div class="shell doc">
+  <aside class="toc" aria-label="İçindekiler">
+    <p>Bu sayfada</p>
+    <ol id="toc-list"></ol>
+  </aside>
+
+  <article class="prose">
+    <h2>Neden CodeVocab?</h2>
+    <p>
+      Kelimeleri sadece sözlük anlamıyla değil, gerçek hayattaki <strong>kullanım bağlamlarıyla</strong> öğrenmen için
+      tasarlandı. Özellikle Türkçe konuşanların mesajlarda, e-postalarda ve günlük konuşmada düştüğü tuzaklara
+      odaklanır: Türkçeden birebir çeviri, yanlış zaman, gereksiz edat.
+    </p>
+
+    <h2>Cümle analizi</h2>
+    <p>Alttaki yazı kutusunda <strong>Analiz</strong> modu seçiliyken İngilizce bir cümle yaz ve gönder.</p>
+    <ol class="steps">
+      <li><strong>Puan</strong>Cümlen 100 üzerinden puanlanır. Doğru ve doğal bir cümle her zaman 100 alır.</li>
+      <li><strong>Doğrusu</strong>Düzeltilmiş cümle gösterilir; silinen kelimeler <span style="color:var(--bad);text-decoration:line-through">üstü çizili</span>, eklenenler <span style="color:var(--good)">yeşil</span>. Dinleyebilir ya da kopyalayabilirsin.</li>
+      <li><strong>Mentor notu</strong>Hatanın neden yanlış olduğu ve doğru kural Türkçe, kısa bir paragrafla açıklanır.</li>
+    </ol>
+    <div class="score-scale">
+      <div style="--c: var(--good)"><b>95–100</b>Mükemmel</div>
+      <div style="--c: var(--info)"><b>80–94</b>Gayet iyi</div>
+      <div style="--c: var(--warn)"><b>60–79</b>Geliştirilebilir</div>
+      <div style="--c: var(--bad)"><b>0–59</b>Tekrar dene</div>
     </div>
 
-    <nav class="cv-navbar" id="cv-navbar">
-      <a class="cv-navbar-brand" href="/">
-        <img
-          src="{{ url_for('static', filename='codevocablogohead.png') }}"
-          alt="CodeVocab"
-          class="nav-logo"
-        />
-      </a>
-      <div class="cv-navbar-links">
-        <a class="cv-nav-btn" href="/">Ana Sayfa</a>
-        <a class="cv-nav-btn" href="/about">Hakkında</a>
-      </div>
-    </nav>
+    <h2>Mentora soru sor</h2>
+    <p>
+      Analizden sonra sohbete devam edebilirsin. "Neden böyle?", "Daha resmi nasıl yazarım?" gibi hazır sorulara tıkla ya
+      da kendi sorunu Türkçe yaz. Mentor, aynı sohbetteki önceki mesajları hatırlayarak cevap verir.
+    </p>
+    <div class="callout">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M9 18h6M10 22h4M12 2a7 7 0 0 0-4 12.7V17h8v-2.3A7 7 0 0 0 12 2Z" /></svg>
+      <p>Örnek: <code>present perfect ne zaman kullanılır?</code> ya da <code>bunu daha kibar nasıl yazarım?</code></p>
+    </div>
 
-    <main class="guide-container">
-      <h1>CodeVocab Kullanım Rehberi</h1>
+    <h2>Kelime modu</h2>
+    <p>Yazı kutusundaki <strong>Kelime</strong> sekmesine geç.</p>
+    <ul>
+      <li><strong>Rastgele:</strong> Havuzdan 5 kelimelik bir seçki gelir; birine tıkla.</li>
+      <li><strong>Kendi kelimen:</strong> Merak ettiğin kelimeyi yaz (ör. <code>awkward</code>) ve gönder.</li>
+      <li>
+        <strong>Kart:</strong> Türkçe anlam, IPA telaffuz, hoparlör simgesiyle sesli okuma, A1/B1/C1 örnek cümleler ve
+        Türklerin sık yaptığı hataya dair bir ipucu.
+      </li>
+      <li><strong>Cümle kur:</strong> Karttaki düğmeyle Analiz moduna geçip o kelimeyle kendi cümleni dene.</li>
+    </ul>
 
-      <h2>Giriş: Neden CodeVocab?</h2>
-      <p>
-        CodeVocab, kelimeleri sadece sözlük anlamıyla değil, gerçek hayattaki
-        <span class="highlight">kullanım bağlamlarıyla</span> ve yapay zeka
-        desteğiyle öğrenmeniz için tasarlanmıştır. İşte platformun ana
-        özellikleri:
-      </p>
+    <h2>Konu çalış</h2>
+    <p>Yazı kutusundaki <strong>Konu</strong> sekmesine geç ve bir gramer konusu ya da kalıp yaz (ör. <code>present perfect</code>, <code>used to</code>, <code>edatlar</code>). Türkçe ya da yarım yazman sorun değil, konu adı otomatik düzeltilir.</p>
+    <ol class="steps">
+      <li><strong>Ders kartı</strong>Özet, formül, kullanım alanları (gerçek hayattan örneklerle), Türkçe ile karşılaştırma, Türklerin düştüğü tuzaklar ve sinyal kelimeler.</li>
+      <li><strong>Mini quiz</strong>5 soru: seçenekli ve boşluk doldurma. Cevabın anında kontrol edilir ve neden doğru/yanlış olduğu açıklanır.</li>
+      <li><strong>Sonuç</strong>Skorun kaydedilir. <strong>Yeni sorular</strong> ile aynı konuda tekrar dene, <strong>Soru sor</strong> ile takıldığın yeri mentora sor.</li>
+    </ol>
+    <div class="callout">
+      <svg viewBox="0 0 24 24" width="18" height="18"><circle cx="12" cy="12" r="4" /><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" /></svg>
+      <p><strong>Günün kalıbı:</strong> Konu modunda ilk öneri her gün değişir. Her gün bir kalıp çalışmak için en kolay yol bu.</p>
+    </div>
+    <p>Quiz otomatik üretildiği için nadiren hatalı olabilir. Cevabının da doğru olduğunu düşünüyorsan yanlış işaretlenen sorunun altındaki <strong>Mentora sor</strong> bağlantısına tıkla; mentor tarafsız olarak değerlendirir.</p>
 
-      <h2>1. Kelime Avcısı (Vocab Hunter)</h2>
-      <p>
-        Ana sayfanın merkezinde yer alan bu modül, kelime dağarcığınızı
-        genişletmenin en hızlı yoludur.
-      </p>
-      <ul>
-        <li>
-          <strong>Keşfet:</strong> "Yeni Kelime Getir" butonuna basarak rastgele
-          bir kelime seçin.
-        </li>
-        <li>
-          <strong>AI Analizi:</strong> Bir kelimeye tıkladığınızda yapay zeka o
-          kelime için:
-          <ul>
-            <li>Türkçe karşılığını,</li>
-            <li>Fonetik okunuşunu,</li>
-            <li>
-              <span class="highlight"
-                >A1 (Başlangıç), B1 (Orta) ve C1 (İleri)</span
-              >
-              seviyelerinde 3 farklı örnek cümleyi saniyeler içinde üretir.
-            </li>
-          </ul>
-        </li>
-        <li>
-          <strong>Koleksiyona Ekle:</strong> Eğer kelimeyi öğrendiğinizi
-          düşünüyorsanız "Öğrenilenler Listesine Ekle" butonunu kullanın.
-        </li>
-      </ul>
+    <h2>Öğrenilenler ve geçmiş</h2>
+    <ul>
+      <li>Kelime kartında <strong>Biliyorum</strong> dediğin kelime, rastgele seçkilerde bir daha karşına çıkmaz.</li>
+      <li>Sol alttaki <strong>Öğrenilenler</strong> penceresinde öğrendiğin kelimeleri ve çalıştığın konuları en iyi skorlarıyla görebilirsin.</li>
+      <li>Her sohbet sol taraftaki listede tarihe göre saklanır; arama kutusuyla eski sohbetleri bulabilirsin.</li>
+    </ul>
+    <div class="callout warn">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 9v4M12 17h.01" /><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" /></svg>
+      <p>Bu veriler yalnızca tarayıcının <strong>LocalStorage</strong> alanında durur. Tarayıcı verilerini silersen ilerlemen de silinir.</p>
+    </div>
 
-      <h2>2. AI Cümle Analizi (Codvo AI)</h2>
-      <p>
-        Kendi kurduğunuz cümlelerin doğruluğundan emin olmak mı istiyorsunuz?
-      </p>
-      <ul>
-        <li>
-          <strong>Metin Girişi:</strong> "Cümle Analizi" kutusuna İngilizce
-          cümlenizi yazın.
-        </li>
-        <li>
-          <strong>Puanlama:</strong> Yapay zeka cümlenizi
-          <span class="highlight">100 üzerinden</span> (Gramer, Doğallık,
-          Bağlam) puanlar.
-        </li>
-        <li>
-          <strong>Geri Bildirim:</strong> Hatalı kısımlar tespit edilir ve neden
-          yanlış olduğu <span class="highlight">Türkçe</span> olarak açıklanır.
-        </li>
-        <li>
-          <strong>Öneri:</strong> AI size aynı cümleyi "Daha Doğal/Native" nasıl
-          kurabileceğinize dair alternatifler sunar.
-        </li>
-      </ul>
+    <h2>Kısayollar</h2>
+    <ul>
+      <li><span class="kbd">Enter</span> gönder, <span class="kbd">Shift</span> + <span class="kbd">Enter</span> yeni satır</li>
+      <li><span class="kbd">⌘</span> / <span class="kbd">Ctrl</span> + <span class="kbd">K</span> yeni sohbet</li>
+      <li><span class="kbd">Esc</span> mobilde menüyü kapat</li>
+    </ul>
 
-      <h2>3. İlerleme Takibi (Progress Tracker)</h2>
-      <p>
-        Uygulamanın sağ üst köşesindeki "Öğrenilenler" (veya "Kelime Listem")
-        butonuna tıklayarak:
-      </p>
-      <ul>
-        <li>Daha önce kaydettiğiniz tüm kelimeleri görebilir,</li>
-        <li>İhtiyaç duymadığınız kelimeleri listenizden silebilirsiniz.</li>
-        <li>
-          <span class="highlight">Not:</span> Bu veriler
-          <span class="highlight">LocalStorage</span> teknolojisi ile sadece
-          sizin tarayıcınızda saklanır.
-        </li>
-      </ul>
-
-      <h2>4. İpuçları ve Tavsiyeler</h2>
-      <ul>
-        <li>
-          <strong>Süreklilik:</strong> Her gün en az 5 yeni kelimeyi
-          "Öğrenilenler" listesine eklemeye çalışın.
-        </li>
-        <li>
-          <strong>Analiz:</strong> Cümle analizi modülünde sadece hatalarınıza
-          bakmayan, AI'nın önerdiği "daha doğal" kalıpları sesli tekrar edin.
-        </li>
-        <li>
-          <strong>Mobil Kullanım:</strong> CodeVocab
-          <span class="highlight">responsive (duyarlı)</span> bir tasarıma
-          sahiptir; otobüste veya kahve molasında telefonunuzdan kelime avına
-          devam edebilirsiniz.
-        </li>
-      </ul>
-    </main>
-
-    <footer class="cv-footer">
-      <div class="cv-footer-top">
-        <div class="cv-footer-brand">
-          <img
-            src="{{ url_for('static', filename='codevocablogo_dep.png') }}"
-            alt="CodeVocab Logo"
-            class="footer-main-logo"
-          />
-          <p class="footer-desc">
-            Yapay zeka destekli, dinamik İngilizce öğrenme asistanı.
-          </p>
-          <div class="footer-sub-logos">
-            <a
-              href="https://www.instagram.com/marki.corp/"
-              target="_blank"
-              class="sponsor-link"
-            >
-              <img
-                src="{{ url_for('static', filename='logo_marki.png') }}"
-                alt="Marki Logo"
-                class="footer-sponsor-logo"
-              />
-            </a>
-            <a href="https://whyasaf.com" target="_blank" class="sponsor-link">
-              <img
-                src="{{ url_for('static', filename='whyasaf_logo.png') }}"
-                alt="Whyasaf Logo"
-                class="footer-sponsor-logo"
-              />
-            </a>
-          </div>
-        </div>
-        <div class="cv-footer-links">
-          <div class="footer-col">
-            <h4>Platform</h4>
-            <a href="/?mode=vocab">Kelime Avcısı</a>
-            <a href="/?mode=chat">Cümle Analizi</a>
-          </div>
-          <div class="footer-col">
-            <h4>Kurumsal</h4>
-            <a href="/about">Hakkında & Vizyon</a>
-            <a href="https://whyasaf.com">Geliştirici (whyasaf)</a>
-            <a href="/guide">Nasıl Kullanılır?</a>
-          </div>
-          <div class="footer-col">
-            <h4>Yasal</h4>
-            <a href="/privacy">Gizlilik Politikası</a>
-            <a href="/terms">Kullanım Koşulları</a>
-          </div>
-        </div>
-      </div>
-      <div class="cv-footer-bottom">
-        <p>
-          CodeVocab 2026 © Tüm hakları saklıdır. Ömer Asaf Ak | whyasaf
-          tarafından tasarlanmış ve kodlanmıştır.
-        </p>
-      </div>
-    </footer>
-  </body>
-</html>
+    <h2>İpuçları</h2>
+    <ul>
+      <li><strong>Süreklilik:</strong> Her gün en az 5 kelimeyi "Biliyorum" listesine eklemeye çalış.</li>
+      <li><strong>Sesli tekrar:</strong> Düzeltilmiş cümleyi hoparlör simgesiyle dinle ve yüksek sesle tekrar et.</li>
+      <li><strong>Gerçek cümleler:</strong> İş yerinde yazacağın gerçek mesajları analiz ettir; en kalıcı öğrenme budur.</li>
+      <li><strong>Mobil:</strong> Arayüz telefonda da çalışır; otobüste ya da kahve molasında devam edebilirsin.</li>
+    </ul>
+  </article>
+</div>
+{% endblock %}

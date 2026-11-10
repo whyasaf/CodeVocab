@@ -1,0 +1,35 @@
+{# Koyu temada beyaz, açık temada orijinal logoyu gösterir.
+   Kullanım: {{ logo('codevocablogohead', 'CodeVocab', 'brand-mark') }} #}
+{% macro logo(name, alt='', cls='', loading='eager') -%}
+<img src="{{ url_for('static', filename=name ~ '_white.png') }}" alt="{{ alt }}" class="{{ cls }} logo-dark" loading="{{ loading }}" decoding="async" />
+<img src="{{ url_for('static', filename=name ~ '.png') }}" alt="{{ alt }}" class="{{ cls }} logo-light" loading="{{ loading }}" decoding="async" />
+{%- endmacro %}
+
+{# Her sayfanın <head> ortak kısmı #}
+{% macro head_common(title, description) -%}
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>{{ title }}</title>
+<meta name="description" content="{{ description }}" />
+<meta name="theme-color" content="#000000" />
+<meta property="og:title" content="{{ title }}" />
+<meta property="og:description" content="{{ description }}" />
+<meta property="og:image" content="{{ url_for('static', filename='cv_banner_1.png', _external=True) }}" />
+<link rel="icon" type="image/png" href="{{ url_for('static', filename='codevocablogohead.png') }}" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}" />
+<script>
+  // Tema seçimini sayfa çizilmeden uygula (yanıp sönmeyi önler)
+  (function () {
+    var t = "dark";
+    try {
+      var s = localStorage.getItem("cv_theme");
+      if (s === "light" || s === "dark") t = s;
+    } catch (e) {}
+    document.documentElement.dataset.theme = t;
+    if (t === "light") document.querySelector('meta[name="theme-color"]').content = "#fafafa";
+  })();
+</script>
+{%- endmacro %}

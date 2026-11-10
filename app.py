@@ -1,320 +1,401 @@
-from flask import Flask, render_template, request, jsonify
-import sqlite3
-import os
-from dotenv import load_dotenv
 import json
-from groq import Groq
+import os
+import re
+import sqlite3
+from collections import OrderedDict
+
+from dotenv import load_dotenv
+from urllib.parse import urlencode, urlparse
+
+from flask import Flask, jsonify, make_response, redirect, render_template, request
 
 load_dotenv()
 
+from ai import AIUnavailable, active_providers, complete_json  # noqa: E402
+from prompts import (  # noqa: E402
+    ANALYZER_SYSTEM_PROMPT,
+    TOPIC_QUIZ_USER_TEMPLATE,
+    TOPIC_SYSTEM_PROMPT,
+    TOPIC_USER_TEMPLATE,
+    WORD_SYSTEM_PROMPT,
+    WORD_USER_TEMPLATE,
+)
+
 app = Flask(__name__)
-app.debug = False
-DB_FILE = "vocab.db"
-generated_words_cache = {}
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DB_FILE = os.path.join(BASE_DIR, "vocab.db")
 
-api_key = os.environ.get("GROQ_API_KEY")
-client = Groq(api_key=api_key)
+MAX_TEXT_LEN = 500
+MAX_HISTORY = 8          # sohbette modele gönderilen önceki mesaj sayısı
+MAX_KNOWN_WORDS = 3000
+SKIP_MOST_COMMON = 150   # "the", "would" gibi en temel kelimeleri havuzdan çıkar
+WORD_RE = re.compile(r"^[A-Za-z][A-Za-z'\- ]{0,39}$")
+MAX_TOPIC_LEN = 80
 
-GROQ_MODEL = "llama-3.3-70b-versatile"
+
+class LRUCache(OrderedDict):
+    def __init__(self, maxsize=500):
+        super().__init__()
+        self.maxsize = maxsize
+
+    def get(self, key):
+        if key in self:
+            self.move_to_end(key)
+            return self[key]
+        return None
+
+    def put(self, key, value):
+        self[key] = value
+        self.move_to_end(key)
+        if len(self) > self.maxsize:
+            self.popitem(last=False)
+
+
+word_cache = LRUCache()
+topic_cache = LRUCache(maxsize=200)
+
 
 def get_db_connection():
-    conn = sqlite3.connect(DB_FILE)
+    # Vercel'de dosya sistemi salt okunur; sadece okuma yapıyoruz
+    conn = sqlite3.connect(f"file:{DB_FILE}?mode=ro", uri=True)
     conn.row_factory = sqlite3.Row
     return conn
 
-def generate_word_card(word):
-    if word in generated_words_cache:
-        print(f"Cache'den getiriliyor: {word}")
-        return generated_words_cache[word]
 
-    prompt = f"""
-    User wants to learn the word: '{word}'.
-    Return ONLY a raw JSON object (absolutely NO markdown formatting, NO '```json' wrapper).
-    Strictly use this format:
-    {{
-      "word": "{word}",
-      "phonetic": "/.../",
-      "definition": "Natural, short Turkish definition (NOT robotic). e.g. for birthday say Doğum Günü, not birinin doğduğu gün.",
-      "sentences": {{
-        "A1": "A simple, short English sentence using the word correctly. (Do NOT say 'This is a sentence with...')",
-        "B1": "A specific, intermediate sentence showing context.",
-        "C1": "A complex, advanced sentence showing nuance or idiom."
-      }}
-    }}
-    """
-    
-    try:
-        chat_completion = client.chat.completions.create(
-            messages=[
-                {
-                    "role": "system",
-                    "content": "You are an English teaching API that outputs perfectly formatted JSON data."
-                },
-                {
-                    "role": "user",
-                    "content": prompt
-                }
-            ],
-            model=GROQ_MODEL,
-            response_format={"type": "json_object"}, 
-            temperature=0.3
-        )
-        
-        text = chat_completion.choices[0].message.content
-        data = json.loads(text)
-        
-        if 'definition' in data:
-            data['meaning_tr'] = data['definition']
-            
-        generated_words_cache[word] = data
-        return data
-        
-    except Exception as e:
-        print(f"HATA DETAYI: {e}")
-        fallback_data = {
-            "word": word,
-            "phonetic": "//",
-            "meaning_tr": "Tanım şu an yüklenemiyor (AI Hatası).",
-            "sentences": {
-                "A1": "Sentence generation failed.",
-                "B1": "Please try again later.",
-                "C1": "System is temporarily busy."
-            }
-        }
-        return fallback_data
+def ai_error_response(e: AIUnavailable):
+    if e.rate_limited:
+        return jsonify({"error": "Tüm ücretsiz AI kotaları şu an dolu. Bir dakika sonra tekrar dene."}), 429
+    print(f"[ai] all providers failed: {e}")
+    if not active_providers():
+        return jsonify({"error": "Sunucuda AI anahtarı tanımlı değil (.env dosyasını kontrol et)."}), 503
+    return jsonify({"error": "AI şu an yanıt veremiyor. Biraz sonra tekrar dene."}), 503
 
-@app.route('/')
+
+# ───────────────────────── Pages ─────────────────────────
+
+APP_COOKIE = "cv_app"  # uygulamayı en az bir kez açanları işaretler
+
+
+@app.route("/")
 def home():
-    return render_template('index.html')
+    # Eski bağlantılar (/?mode=vocab vb.) doğrudan uygulamaya gider.
+    if request.args.get("mode"):
+        return redirect("/app?" + urlencode({"mode": request.args["mode"]}))
+    # Daha önce uygulamayı açmış biri siteye dışarıdan girerse tanıtımı atla.
+    # Site içinden (logo/nav) gelen her zaman tanıtım sayfasını görür.
+    ref = urlparse(request.referrer or "")
+    if request.cookies.get(APP_COOKIE) and ref.netloc != request.host:
+        return redirect("/app")
+    return render_template("home.html")
 
-@app.route('/about')
+
+@app.route("/app")
+def chat_app():
+    resp = make_response(render_template("index.html"))
+    resp.set_cookie(APP_COOKIE, "1", max_age=60 * 60 * 24 * 365, samesite="Lax")
+    return resp
+
+
+@app.route("/about")
 def about():
-    return render_template('about.html')
+    return render_template("about.html")
 
-@app.route('/privacy')
+
+@app.route("/privacy")
 def privacy():
-    return render_template('privacy.html')
+    return render_template("privacy.html")
 
-@app.route('/terms')
+
+@app.route("/terms")
 def terms():
-    return render_template('terms.html')
+    return render_template("terms.html")
 
-@app.route('/guide')
+
+@app.route("/guide")
 def guide():
-    return render_template('guide.html')
+    return render_template("guide.html")
 
-@app.route('/api/get_random_words', methods=['POST'])
+
+# ───────────────────────── API ─────────────────────────
+
+@app.route("/api/health")
+def health():
+    return jsonify({"ok": True, "providers": [p.name for p in active_providers()]})
+
+
+@app.route("/api/get_random_words", methods=["POST"])
 def get_random_words():
-    try:
-        data = request.get_json(silent=True) or {}
-        known_words = data.get('known_words', [])
+    data = request.get_json(silent=True) or {}
+    known = data.get("known_words", [])
+    if not isinstance(known, list):
+        known = []
+    known = [w for w in known if isinstance(w, str)][:MAX_KNOWN_WORDS]
+    count = max(1, min(int(data.get("count", 5) or 5), 10))
 
+    try:
         conn = get_db_connection()
-        cursor = conn.cursor()
-
-        if known_words:
-            placeholders = ",".join("?" for _ in known_words)
-            query = f"SELECT word FROM words WHERE word NOT IN ({placeholders}) ORDER BY RANDOM() LIMIT 5"
-            cursor.execute(query, known_words)
+        cur = conn.cursor()
+        if known:
+            # Büyük listelerde "NOT IN (?,?,...)" SQLite değişken sınırını aşabilir,
+            # bu yüzden bilinen kelimeleri tek bir JSON parametresiyle gönderiyoruz.
+            cur.execute(
+                "SELECT word FROM words WHERE id > ? AND word NOT IN (SELECT value FROM json_each(?)) "
+                "ORDER BY RANDOM() LIMIT ?",
+                (SKIP_MOST_COMMON, json.dumps(known), count),
+            )
         else:
-            cursor.execute("SELECT word FROM words ORDER BY RANDOM() LIMIT 5")
-
-        rows = cursor.fetchall()
+            cur.execute(
+                "SELECT word FROM words WHERE id > ? ORDER BY RANDOM() LIMIT ?", (SKIP_MOST_COMMON, count)
+            )
+        words = [row["word"] for row in cur.fetchall()]
         conn.close()
-        words = [row['word'] for row in rows]
         return jsonify(words)
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    except sqlite3.Error as e:
+        print(f"[db] {e}")
+        return jsonify({"error": "Kelime listesi okunamadı."}), 500
 
-@app.route('/api/word_details')
+
+@app.route("/api/word_details")
 def word_details():
-    word = request.args.get('word')
-    if not word:
-        return jsonify({"error": "No word provided"}), 400
-    
-    details = generate_word_card(word)
-    if details:
-        return jsonify(details)
-    return jsonify({"error": "Word not found or AI generation failed"}), 404
+    word = (request.args.get("word") or "").strip().lower()
+    if not word or not WORD_RE.match(word):
+        return jsonify({"error": "Geçerli bir İngilizce kelime gir."}), 400
 
-SYSTEM_PROMPT = """
-You are CodeVocab — a brutally honest English mentor built for Turkish software developers.
-
-Your single mission: End the "Did I write this correctly?" doubt. 
-That means you never let a wrong sentence pass, and you never break a correct one.
-
-═══════════════════════════════════════════════════════
-PART 1 — HOW YOU THINK BEFORE SCORING
-═══════════════════════════════════════════════════════
-
-Before you output anything, silently run these 4 checks in order:
-
-CHECK 1 — TURKISH TRANSFER TRAP
-Is this sentence a word-for-word translation of a Turkish pattern?
-Common traps:
-  • "my local" → should be "my local machine / environment" or "locally"
-  • "I am exciting" → should be "I am excited"
-  • "discuss about" → should be "discuss" (no preposition)
-  • "married with" → should be "married to"
-  • "I am work" → should be "I am working"
-  • "since two days" → should be "for two days"
-  • "in my local" / "on my local" → BOTH wrong — noun is missing
-  • "I am boring" → should be "I am bored"
-  • "We are very much" → Turkish "çok" transfer, unnatural
-  • "I couldn't understand nothing" → double negative from Turkish
-If yes → this is a structural error. Score drops to 40–65 range.
-
-CHECK 2 — TENSE TRAP
-Is the tense used correctly for the context implied?
-  • "I have pushed the code an hour ago" → wrong. "ago" forces Simple Past.
-  • "I am work on this since yesterday" → wrong. Needs Present Perfect Continuous.
-  • "We must to deploy" → wrong. Modal + base verb, never "to".
-  • "I am working on this project since 3 months" → wrong. Needs Present Perfect Continuous.
-If tense is wrong → score drops to 55–75 range.
-
-CHECK 3 — PREPOSITION TRAP
-Is a preposition missing, extra, or wrong?
-  • Extra: "discuss about", "enter into the room", "emphasize on"
-  • Wrong: "in my local machine" (should be "on")
-  • Missing: "I arrived the office" (should be "at the office")
-If wrong → score drops to 65–80 range depending on severity.
-
-CHECK 4 — NATURAL FLOW
-Read the sentence as a native English speaker would in a Slack message.
-Would they understand it immediately and find it natural?
-If yes and checks 1–3 passed → score is 100. 
-Do NOT look for improvements. Do NOT suggest alternatives. The sentence is done.
-
-═══════════════════════════════════════════════════════
-PART 2 — SCORING RULES
-═══════════════════════════════════════════════════════
-
-100     → Correct and natural. A native speaker would write this exact sentence.
-85–99   → Correct meaning, very slightly unnatural phrasing. Rare — use carefully.
-65–84   → Clear but has a real grammar or word choice error.
-40–64   → Meaning is partially lost or sentence has structural damage.
-0–39    → Meaning is broken or sentence is significantly wrong.
-
-STRICT RULES:
-- A Turkish transfer error (Check 1) can NEVER score above 65.
-- A wrong tense (Check 2) can NEVER score above 75.
-- If the sentence is correct, the score MUST be 100. No exceptions.
-- Never give 80 when you mean 60. Never inflate to avoid discouraging the user.
-- Multiple errors compound — score should reflect total damage, not average. 3 errors of this severity (e.g. Turkish transfer, preposition, tense) = 35–45 range.
-
-═══════════════════════════════════════════════════════
-PART 3 — WHAT YOU NEVER PENALIZE
-═══════════════════════════════════════════════════════
-
-These are NOT mistakes. Do not mention them. Do not lower the score for them:
-  • Missing period at the end
-  • Lowercase "i" instead of "I"  
-  • British vs American spelling
-  • Informal or casual tone (unless the user asked for formal)
-
-═══════════════════════════════════════════════════════
-PART 4 — HOW YOU EXPLAIN (in Turkish)
-═══════════════════════════════════════════════════════
-
-Write like a mentor, not a grammar book. No bullet lists. Flowing sentences.
-Use <b> tags ONLY on: the wrong part, the correct part, and the rule name.
-
-IMPORTANT: Never mention "Check 1", "Check 2", "Check 3", or "Check 4" in your explanation. These are internal thinking steps. The user does not see them. Explain the error in plain Turkish as if you discovered it yourself.
-
-IF THERE IS AN ERROR — answer these three things in natural Turkish paragraphs:
-  1. Ne yanlış ve neden yabancı kulağa yanlış geliyor?
-  2. Doğru kural nedir, tek cümlede açıkla.
-  3. Doğru versiyonu cümle içinde göster.
-
-IF THE SENTENCE IS CORRECT — tell them:
-  1. Bu cümle neden doğru ve doğal?
-  2. Native speaker da tam bu şekilde yazar mı? Evet ise söyle.
-  Never say "you could also say X" — the sentence is done, leave it alone.
-
-═══════════════════════════════════════════════════════
-PART 5 — CORRECTED SENTENCE
-═══════════════════════════════════════════════════════
-
-Always provide a complete, fluent English sentence.
-If the original is correct → copy it exactly. Do not rephrase.
-If there are multiple ways to fix it → pick the most natural one used in tech contexts.
-
-═══════════════════════════════════════════════════════
-PART 6 — MOTIVATION
-═══════════════════════════════════════════════════════
-
-One sentence in Turkish. Sound like a real coach, not a chatbot.
-Acknowledge what specifically happened (got it right / caught a hard trap / close but not yet).
-End with exactly one emoji. Never use generic phrases like "Harika ilerleme kaydediyorsun."
-
-MOTIVATION ANTI-PATTERNS (never do these):
-  • Do NOT summarize what the user wrote in Turkish
-  • Do NOT translate their sentence back as motivation
-  • Do NOT use "çaba", "ilerleme", "gayret" generically
-  • Do NOT say what the user did in 3rd person ("ekibinizle tartışmışsınız")
-  • DO name the specific trap they hit:
-    → "Turkish transfer trap'in tam ortasına düştün ama düzeltmesi çok kolay." 
-    → "Tense trap'i yakaladın — 'ago' ile Present Perfect asla bir arada olmaz."
-    → "Bu cümleyi native speaker gibi kurdun, tebrikler."
-
-═══════════════════════════════════════════════════════
-OUTPUT FORMAT
-═══════════════════════════════════════════════════════
-
-Return ONLY this JSON. No markdown. No code blocks. No extra text.
-
-{
-  "score": <integer 0-100>,
-  "corrected_sentence": "<complete natural English sentence>",
-  "explanation": "<Turkish explanation with <b> tags>",
-  "motivation": "<Turkish, 1 sentence, 1 emoji>"
-}
-"""
-
-USER_TEMPLATE = 'Evaluate this English sentence: "{text}"'
-
-@app.route('/api/analyze', methods=['POST'])
-def analyze():
-    data = request.json
-    text = data.get('text', '').strip()
-    
-    if not text:
-        return jsonify({"error": "No text provided"}), 400
-    
-    if len(text) > 500:
-        return jsonify({"error": "Text too long (max 500 chars)"}), 400
+    cached = word_cache.get(word)
+    if cached:
+        return jsonify(cached)
 
     try:
-        chat_completion = client.chat.completions.create(
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": USER_TEMPLATE.format(text=text)}
-            ],
-            model=GROQ_MODEL,
-            response_format={"type": "json_object"},
-            temperature=0.3,   # 0.5 → 0.3: daha tutarlı skorlar için
-            max_tokens=512,    # gereksiz uzun çıktıları önler
+        data, provider = complete_json(
+            WORD_SYSTEM_PROMPT,
+            [{"role": "user", "content": WORD_USER_TEMPLATE.format(word=word)}],
+            temperature=0.3,
+            max_tokens=1500,
+            required_keys=("meaning_tr", "sentences"),
         )
+    except AIUnavailable as e:
+        return ai_error_response(e)
 
-        response_text = chat_completion.choices[0].message.content
-        result = json.loads(response_text)
+    sentences = data.get("sentences") if isinstance(data.get("sentences"), dict) else {}
+    result = {
+        "word": str(data.get("word") or word),
+        "phonetic": str(data.get("phonetic") or ""),
+        "part_of_speech": str(data.get("part_of_speech") or ""),
+        "meaning_tr": str(data.get("meaning_tr") or ""),
+        "sentences": {lvl: str(sentences.get(lvl) or "") for lvl in ("A1", "B1", "C1")},
+        "tip": str(data.get("tip") or ""),
+        "provider": provider,
+    }
+    word_cache.put(word, result)
+    return jsonify(result)
 
-        # Temel alan validasyonu
-        required_keys = {"score", "corrected_sentence", "explanation", "motivation"}
-        if not required_keys.issubset(result.keys()):
-            raise ValueError(f"Missing keys in response: {required_keys - result.keys()}")
 
-        # Score sanity check
-        result["score"] = max(0, min(100, int(result["score"])))
+def _clean_history(raw):
+    """İstemciden gelen sohbet geçmişini modele gönderilebilir hale getirir."""
+    history = []
+    if not isinstance(raw, list):
+        return history
+    for msg in raw[-MAX_HISTORY:]:
+        if not isinstance(msg, dict):
+            continue
+        role = msg.get("role")
+        content = msg.get("content")
+        if role not in ("user", "assistant") or not isinstance(content, str):
+            continue
+        history.append({"role": role, "content": content[:1500]})
+    return history
 
-        return jsonify({"status": "success", "data": result})
 
-    except (json.JSONDecodeError, ValueError) as e:
-        return jsonify({"error": "Model returned invalid response", "detail": str(e)}), 502
-    except Exception as e:
-        if hasattr(e, 'status_code') and e.status_code == 429:
-            return jsonify({"error": "Günlük limit doldu, yarın tekrar dene"}), 429
-        return jsonify({"error": "Analysis failed", "detail": str(e)}), 500
+@app.route("/api/analyze", methods=["POST"])
+def analyze():
+    data = request.get_json(silent=True) or {}
+    text = str(data.get("text", "")).strip()
 
-if __name__ == '__main__':
-    app.run(debug=True, port=5050)
+    if not text:
+        return jsonify({"error": "Boş mesaj gönderilemez."}), 400
+    if len(text) > MAX_TEXT_LEN:
+        return jsonify({"error": f"Mesaj çok uzun (en fazla {MAX_TEXT_LEN} karakter)."}), 400
+
+    messages = _clean_history(data.get("history"))
+    messages.append({"role": "user", "content": text})
+
+    try:
+        result, provider = complete_json(
+            ANALYZER_SYSTEM_PROMPT, messages, temperature=0.3, max_tokens=1500
+        )
+    except AIUnavailable as e:
+        return ai_error_response(e)
+
+    kind = result.get("type")
+    if kind == "reply" or ("text" in result and "score" not in result):
+        reply = str(result.get("text") or "").strip()
+        if not reply:
+            return jsonify({"error": "Model boş yanıt döndürdü."}), 502
+        return jsonify({"status": "success", "type": "reply", "data": {"text": reply}, "provider": provider})
+
+    missing = {"score", "corrected_sentence", "explanation"} - result.keys()
+    if missing:
+        return jsonify({"error": "Model eksik yanıt döndürdü, tekrar dene."}), 502
+    try:
+        score = max(0, min(100, int(float(result["score"]))))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Model geçersiz puan döndürdü, tekrar dene."}), 502
+
+    payload = {
+        "score": score,
+        "corrected_sentence": str(result.get("corrected_sentence") or ""),
+        "explanation": str(result.get("explanation") or ""),
+        "motivation": str(result.get("motivation") or ""),
+    }
+    return jsonify({"status": "success", "type": "analysis", "data": payload, "provider": provider})
+
+
+# ───────────────────────── Konu çalış ─────────────────────────
+
+def _s(value, limit=600):
+    """Model çıktısındaki bir alanı güvenli, kısaltılmış string'e çevir."""
+    return str(value or "").strip()[:limit]
+
+
+def _clean_quiz(raw):
+    """Quiz sorularını doğrula; bozuk soruları at. En az 3 geçerli soru yoksa None."""
+    questions = []
+    for q in raw if isinstance(raw, list) else []:
+        if not isinstance(q, dict):
+            continue
+        kind = q.get("type")
+        text = _s(q.get("q"), 300)
+        answer = _s(q.get("answer"), 120)
+        if not text or not answer:
+            continue
+        # Her soru tam olarak bir boşluk içermeli (iki boşluklu sorular arayüzde bozuk görünür)
+        if kind == "fill" and text.count("___") != 1:
+            continue
+        if kind == "choice" and text.count("___") > 1:
+            continue
+        item = {"type": kind, "q": text, "answer": answer, "explain": _s(q.get("explain"), 400)}
+        if kind == "choice":
+            options = [_s(o, 120) for o in q.get("options", []) if _s(o)]
+            options = list(dict.fromkeys(options))  # tekrarları at
+            if answer not in options:
+                # Model cevabı seçeneklerde birebir yazmamışsa büyük/küçük harf duyarsız eşle
+                match = next((o for o in options if o.lower() == answer.lower()), None)
+                if not match:
+                    continue
+                item["answer"] = match
+            if not 2 <= len(options) <= 5:
+                continue
+            item["options"] = options
+        elif kind == "fill":
+            accept = q.get("accept") if isinstance(q.get("accept"), list) else []
+            item["accept"] = [_s(a, 120).lower() for a in accept if _s(a)][:10]
+        else:
+            continue
+        questions.append(item)
+    return questions[:6] if len(questions) >= 3 else None
+
+
+def _clean_lesson(data):
+    uses = []
+    for u in data.get("uses") or []:
+        if isinstance(u, dict) and _s(u.get("text")):
+            uses.append({k: _s(u.get(k), 400) for k in ("title", "text", "en", "tr")})
+    traps = []
+    for t in data.get("traps") or []:
+        if isinstance(t, dict) and _s(t.get("wrong")) and _s(t.get("right")):
+            traps.append({k: _s(t.get(k), 300) for k in ("wrong", "right", "why")})
+    compare = data.get("compare")
+    if isinstance(compare, dict) and _s(compare.get("with")) and _s(compare.get("text")):
+        compare = {k: _s(compare.get(k), 400) for k in ("with", "text", "a", "b")}
+    else:
+        compare = None
+    return {
+        "topic": _s(data.get("topic"), 80),
+        "topic_tr": _s(data.get("topic_tr"), 80),
+        "level": _s(data.get("level"), 12),
+        "summary": _s(data.get("summary"), 800),
+        "formula": [_s(f, 120) for f in (data.get("formula") or []) if _s(f)][:5],
+        "uses": uses[:5],
+        "turkish_link": _s(data.get("turkish_link"), 800),
+        "traps": traps[:4],
+        "signal_words": [_s(w, 40) for w in (data.get("signal_words") or []) if _s(w)][:10],
+        "compare": compare,
+        "tip": _s(data.get("tip"), 400),
+    }
+
+
+def _read_topic():
+    data = request.get_json(silent=True) or {}
+    topic = " ".join(str(data.get("topic", "")).split())
+    if not topic:
+        return None, (jsonify({"error": "Bir konu yaz (ör. present perfect)."}), 400)
+    if len(topic) > MAX_TOPIC_LEN:
+        return None, (jsonify({"error": f"Konu adı çok uzun (en fazla {MAX_TOPIC_LEN} karakter)."}), 400)
+    return topic, None
+
+
+@app.route("/api/topic", methods=["POST"])
+def topic_lesson():
+    topic, err = _read_topic()
+    if err:
+        return err
+
+    key = topic.lower()
+    cached = topic_cache.get(key)
+    if cached:
+        return jsonify(cached)
+
+    try:
+        data, provider = complete_json(
+            TOPIC_SYSTEM_PROMPT,
+            [{"role": "user", "content": TOPIC_USER_TEMPLATE.format(topic=topic)}],
+            temperature=0.4,
+            max_tokens=3500,  # ölçüm: ders+quiz ≈ 2000 token; Groq ücretsiz katman 8k token/dk
+        )
+    except AIUnavailable as e:
+        return ai_error_response(e)
+
+    if data.get("type") == "invalid":
+        msg = _s(data.get("message")) or "Bu bir İngilizce konusu gibi görünmüyor. Ör: present perfect, articles, conditionals."
+        return jsonify({"error": msg}), 422
+
+    lesson = _clean_lesson(data)
+    quiz = _clean_quiz(data.get("quiz"))
+    if not lesson["topic"] or not lesson["summary"] or not lesson["uses"] or not quiz:
+        return jsonify({"error": "Ders tam oluşturulamadı, tekrar dene."}), 502
+
+    result = {"lesson": lesson, "quiz": quiz, "provider": provider}
+    topic_cache.put(key, result)
+    # Normalize edilmiş adla da önbelleğe al (ör. "present perfekt" → "Present Perfect")
+    topic_cache.put(lesson["topic"].lower(), result)
+    return jsonify(result)
+
+
+@app.route("/api/topic_quiz", methods=["POST"])
+def topic_quiz():
+    topic, err = _read_topic()
+    if err:
+        return err
+
+    data = request.get_json(silent=True) or {}
+    previous = [str(q)[:200] for q in (data.get("previous") or []) if isinstance(q, str)][-15:]
+    prev_text = "\n".join(f"- {q}" for q in previous) or "- (yok)"
+
+    try:
+        result, provider = complete_json(
+            TOPIC_SYSTEM_PROMPT,
+            [{"role": "user", "content": TOPIC_QUIZ_USER_TEMPLATE.format(topic=topic, previous=prev_text)}],
+            temperature=0.8,
+            max_tokens=2200,
+        )
+    except AIUnavailable as e:
+        return ai_error_response(e)
+
+    quiz = _clean_quiz(result.get("quiz"))
+    if not quiz:
+        return jsonify({"error": "Yeni sorular oluşturulamadı, tekrar dene."}), 502
+    return jsonify({"topic": topic, "quiz": quiz, "provider": provider})
+
+
+if __name__ == "__main__":
+    app.run(debug=True, port=int(os.environ.get("PORT", 5050)))
