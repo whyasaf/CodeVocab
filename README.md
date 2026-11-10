@@ -6,7 +6,7 @@
 
 Tamamen **ücretsiz AI sağlayıcıları** üzerinde çalışır. Birinin kotası dolarsa otomatik olarak diğerine geçer.
 
-🌐 **Canlı:** [codevocab.whyasaf.com](https://codevocab.whyasaf.com)
+🌐 **Hemen dene:** [codevocab.whyasaf.com](https://codevocab.whyasaf.com) · Kurulum gerekmez, kayıt yok.
 
 ---
 
@@ -66,22 +66,7 @@ Tüm sağlayıcılar OpenAI uyumlu API sunduğu için tek bir `openai` istemcisi
 
 ---
 
-## 🚀 Kurulum (Local)
-
-```bash
-git clone https://github.com/whyasaf/CodeVocab.git
-cd CodeVocab
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env   # en az bir AI anahtarı doldur
-python app.py          # http://localhost:5050  (uygulama: /app)
-```
-
-Kurulumun çalıştığını `http://localhost:5050/api/health` adresinden kontrol edebilirsin. Bu adres aktif sağlayıcıları listeler.
-
-**Vercel:** Proje ayarlarında `Environment Variables` kısmına aynı anahtarları (`GROQ_API_KEY`, `GEMINI_API_KEY`, ...) eklemen yeterli.
-
-### Proje yapısı
+## 📁 Proje yapısı
 
 ```
 app.py            Flask route'ları ve API uç noktaları
@@ -103,7 +88,9 @@ excluded_words.txt Havuza alınmayan özel isimler, markalar ve anlamsız kelime
 
 ## ⚖️ Lisans ve Gizlilik
 
-Bu proje **whyasaf** tarafından portfolyo ve eğitim amacıyla geliştirilmiştir. Kullanıcı verileri sunucu tarafında saklanmaz. Yazılan metinler analiz için anlık olarak yukarıdaki AI sağlayıcılarından birine gönderilir. Detaylar için uygulamadaki **Gizlilik Politikası** sayfasına bakabilirsin.
+**Tüm hakları saklıdır.** Kaynak kod, tasarım, logolar ve görseller Ömer Asaf Ak'a (whyasaf) aittir; `logo_marki*` dosyaları Marki'ye aittir. Kod yalnızca incelemek ve öğrenmek için görüntülenebilir. Yazılı izin olmadan kopyalanamaz, başka bir projede kullanılamaz veya yayınlanamaz. Ayrıntılar: [LICENSE](LICENSE).
+
+**Gizlilik:** Kullanıcı verileri sunucu tarafında saklanmaz. Yazılan metinler analiz için anlık olarak yukarıdaki AI sağlayıcılarından birine gönderilir. Detaylar için sitedeki [Gizlilik Politikası](https://codevocab.whyasaf.com/privacy) sayfasına bakabilirsin.
 
 ---
 
