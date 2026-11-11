@@ -632,7 +632,7 @@
           L.formula.length
             ? `<div class="card-section"><p class="label">Formül</p><div class="formula">${L.formula
                 .map((f) => `<code>${escapeHtml(f)}</code>`)
-                .join("")}</div></div>`
+                .join("\n")}</div></div>`
             : ""
         }
         ${uses ? `<div class="card-section"><p class="label">Ne zaman kullanılır?</p><div class="uses">${uses}</div></div>` : ""}
@@ -984,7 +984,7 @@
       } catch (err) {
         pushError(err, { type: "topic", topic });
       }
-    }, "Ders hazırlanıyor…");
+    }, "Ders hazırlanıyor ve denetleniyor… (10-15 sn)");
   }
 
   function runTopicQuiz(topic, previous) {
@@ -997,7 +997,7 @@
       } catch (err) {
         pushError(err, { type: "topicQuiz", topic, previous });
       }
-    }, "Yeni sorular hazırlanıyor…");
+    }, "Yeni sorular hazırlanıyor ve denetleniyor…");
   }
 
   function findMessage(mid) {

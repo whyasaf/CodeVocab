@@ -19,6 +19,8 @@ from ai import AIUnavailable, active_providers, complete_json  # noqa: E402
 from prompts import (  # noqa: E402
     ANALYZER_SYSTEM_PROMPT,
     TOPIC_QUIZ_USER_TEMPLATE,
+    TOPIC_REVIEW_SYSTEM_PROMPT,
+    TOPIC_REVIEW_USER_TEMPLATE,
     TOPIC_SYSTEM_PROMPT,
     TOPIC_USER_TEMPLATE,
     WORD_SYSTEM_PROMPT,
@@ -362,8 +364,8 @@ def _s(value, limit=600):
     return str(value or "").strip()[:limit]
 
 
-def _clean_quiz(raw):
-    """Quiz sorularını doğrula; bozuk soruları at. En az 3 geçerli soru yoksa None."""
+def _clean_quiz(raw, minimum=3):
+    """Quiz sorularını doğrula; bozuk soruları at. En az `minimum` geçerli soru yoksa None."""
     questions = []
     for q in raw if isinstance(raw, list) else []:
         if not isinstance(q, dict):
@@ -393,11 +395,66 @@ def _clean_quiz(raw):
             item["options"] = options
         elif kind == "fill":
             accept = q.get("accept") if isinstance(q.get("accept"), list) else []
-            item["accept"] = [_s(a, 120).lower() for a in accept if _s(a)][:10]
+            item["accept"] = list(dict.fromkeys(
+                _s(a, 120).strip("'\"").lower() for a in accept if _s(a)
+            ))[:10]
         else:
             continue
         questions.append(item)
-    return questions[:6] if len(questions) >= 3 else None
+    return questions[:6] if len(questions) >= minimum else None
+
+
+# Sinyal kelime olamayacak anlam/gramer etiketleri (model bazen bunları listeye koyuyor)
+_SIGNAL_LABELS = {
+    "advice", "recommend", "recommendation", "suggest", "suggestion", "expect", "expectation",
+    "probability", "possibility", "regret", "obligation", "necessity", "ability", "permission",
+    "prohibition", "request", "offer", "habit", "certainty", "deduction", "tavsiye", "zorunluluk",
+}
+
+
+def _formula_lines(raw):
+    """Formül liste olmalı; model tek bir metin döndürürse satırlara böl."""
+    if isinstance(raw, str):
+        raw = re.split(r"\s*(?:\n|\|)\s*", raw)
+    return [_s(f, 120) for f in (raw or []) if _s(f)][:5]
+
+
+def _signal_words(raw, topic, compare_with=""):
+    """Konunun kendi kelimelerini ve anlam etiketlerini sinyal kelimelerden ayıkla."""
+    own = set(re.findall(r"[a-z']+", f"{topic} {compare_with}".lower()))
+    out = []
+    for w in raw or []:
+        w = _s(w, 40)
+        key = w.lower().strip(" .")
+        if not key or key in own or key in _SIGNAL_LABELS or key in (x.lower() for x in out):
+            continue
+        out.append(w)
+    return out[:8]
+
+
+_MD_BOLD_RE = re.compile(r"\*{1,2}([^*\n]{1,80}?)\*{1,2}")
+
+
+def _md_to_b(text):
+    """Model bazen <b> yerine markdown (*x*, **x**) yazıyor; arayüzde yıldız görünmesin."""
+    return _MD_BOLD_RE.sub(r"<b>\1</b>", text) if text and "*" in text else text
+
+
+_ONLY_RE = re.compile(r"\b(sadece|yalnızca)\s+", re.I)
+
+
+def _soften_absolutes(text):
+    """
+    Model "should sadece tavsiye verir" gibi yanlış mutlak ifadeler kuruyor (ders aynı anda
+    başka kullanımları da anlatırken). "sadece/yalnızca" kelimesini cümleden çıkarmak anlamı
+    bozmadan iddiayı doğru hâle getirir. "sadece X değil, Y de" kalıbına dokunulmaz.
+    """
+    def fix(sentence):
+        if re.search(r"\bdeğil\b", sentence, re.I):
+            return sentence
+        return _ONLY_RE.sub("", sentence)
+
+    return "".join(fix(part) for part in re.split(r"(?<=[.!?;])", text))
 
 
 def _clean_lesson(data):
@@ -414,19 +471,141 @@ def _clean_lesson(data):
         compare = {k: _s(compare.get(k), 400) for k in ("with", "text", "a", "b")}
     else:
         compare = None
+    # Birden fazla kullanım anlatılıyorsa "sadece X" iddiaları neredeyse her zaman yanlıştır
+    for u in uses:
+        u["text"] = _md_to_b(u["text"])
+    for t in traps:
+        t["why"] = _md_to_b(t["why"])
+    several = len(uses) > 1
+    soft = (lambda t: _md_to_b(_soften_absolutes(t))) if several else _md_to_b
+    if compare:
+        compare["text"] = soft(compare["text"])
     return {
         "topic": _s(data.get("topic"), 80),
         "topic_tr": _s(data.get("topic_tr"), 80),
         "level": _s(data.get("level"), 12),
-        "summary": _s(data.get("summary"), 800),
-        "formula": [_s(f, 120) for f in (data.get("formula") or []) if _s(f)][:5],
+        "summary": soft(_s(data.get("summary"), 800)),
+        "formula": _formula_lines(data.get("formula")),
         "uses": uses[:5],
-        "turkish_link": _s(data.get("turkish_link"), 800),
+        "turkish_link": soft(_s(data.get("turkish_link"), 800)),
         "traps": traps[:4],
-        "signal_words": [_s(w, 40) for w in (data.get("signal_words") or []) if _s(w)][:10],
+        "signal_words": _signal_words(
+            data.get("signal_words"), _s(data.get("topic"), 80), (compare or {}).get("with", "")
+        ),
         "compare": compare,
-        "tip": _s(data.get("tip"), 400),
+        "tip": _md_to_b(_s(data.get("tip"), 400)),
     }
+
+
+# Dersi yazan zayıf yedek model (gpt-oss-20b) kural/quiz hatası yapıyor; ders üretiminde kullanma.
+LESSON_EXCLUDE = ("groq-mini",)
+# Ölçüm (Kasım 2026): Gemini dersi Groq'tan belirgin şekilde daha doğru yazıyor (Türkçe bilgisi,
+# tek doğru cevaplı quiz). Bu yüzden dersi Gemini yazar, Groq denetler; Gemini yoksa tersi.
+LESSON_PREFER = ("gemini", "gemini-alt", "groq")
+# Denetim mümkünse dersi yazandan FARKLI bir modelle yapılır (bkz. _review).
+REVIEW_FIELDS = ("summary", "turkish_link", "tip", "uses", "traps", "compare", "signal_words", "quiz")
+
+
+def _text_fields(data):
+    """Denetlenecek Türkçe açıklama alanları: (yol, metin) çiftleri."""
+    out = [(k, data.get(k)) for k in ("summary", "turkish_link", "tip")]
+    if isinstance(data.get("compare"), dict):
+        out.append(("compare.text", data["compare"].get("text")))
+    for key, sub in (("uses", "text"), ("traps", "why")):
+        for i, item in enumerate(data.get(key) or []):
+            if isinstance(item, dict):
+                out.append((f"{key}[{i}].{sub}", item.get(sub)))
+    return [(path, text) for path, text in out if isinstance(text, str) and text.strip()]
+
+
+def _set_text_field(data, path, value):
+    m = re.fullmatch(r"(\w+)\[(\d+)\]\.(\w+)", path)
+    try:
+        if m:
+            data[m.group(1)][int(m.group(2))][m.group(3)] = value
+        elif path == "compare.text":
+            data["compare"]["text"] = value
+        elif path in ("summary", "turkish_link", "tip"):
+            data[path] = value
+    except (KeyError, IndexError, TypeError):
+        pass
+
+
+def _review(topic, data, written_by):
+    """
+    İkinci geçiş (denetim). Model dersi yeniden yazmaz; her açıklama alanını ve her quiz
+    şıkkını TEK TEK yargılar. Kararı burada kod uygular:
+      • "wrong" işaretlenen alanlar düzeltilmiş metinle değiştirilir,
+      • birden fazla doğru cevabı olan sorular düzeltilmiş hâliyle değiştirilir,
+        düzeltme geçerli değilse soru atılır.
+    Denetim yapılamazsa içerik değişmeden döner (reviewed=False).
+    """
+    content = {k: data[k] for k in REVIEW_FIELDS if data.get(k) is not None}
+    valid_paths = {path for path, _ in _text_fields(data)}
+    # Yazan modeli sona at: aynı model kendi hatasını daha zor görür.
+    others = [p.name for p in active_providers() if p.name != written_by and p.name not in LESSON_EXCLUDE]
+    try:
+        rev, reviewer = complete_json(
+            TOPIC_REVIEW_SYSTEM_PROMPT,
+            [{"role": "user", "content": TOPIC_REVIEW_USER_TEMPLATE.format(
+                topic=topic, content=json.dumps(content, ensure_ascii=False))}],
+            temperature=0.1,
+            max_tokens=3000,
+            required_keys=("quiz",),
+            prefer=others,
+            exclude=LESSON_EXCLUDE,
+            timeout=15,
+        )
+    except AIUnavailable as e:
+        print(f"[review] atlandı: {e}")
+        return data, False
+
+    notes = []
+    for item in rev.get("text") or []:
+        if not isinstance(item, dict) or item.get("verdict") != "wrong":
+            continue
+        path, fixed = str(item.get("field", "")), item.get("fixed")
+        if path in valid_paths and isinstance(fixed, str) and fixed.strip():
+            _set_text_field(data, path, fixed)
+            notes.append(f"{path}: {str(item.get('problem', ''))[:140]}")
+
+    if isinstance(rev.get("signal_words"), list) and "signal_words" in content:
+        data["signal_words"] = rev["signal_words"]
+
+    quiz = data.get("quiz") if isinstance(data.get("quiz"), list) else []
+    verdicts = {v.get("i"): v for v in rev.get("quiz") or [] if isinstance(v, dict)}
+    kept = []
+    for i, q in enumerate(quiz):
+        v = verdicts.get(i)
+        if not v or not isinstance(q, dict):
+            kept.append(q)
+            continue
+        fits = v.get("fits") if isinstance(v.get("fits"), dict) else {}
+        ambiguous = (
+            v.get("unique") is False
+            or sum(1 for ok in fits.values() if ok is True) > 1
+            or bool(v.get("also_correct"))
+        )
+        if not ambiguous:
+            kept.append(q)
+        elif isinstance(v.get("fixed"), dict) and _clean_quiz([v["fixed"]], minimum=1):
+            kept.append(v["fixed"])
+            notes.append(f"quiz[{i}] düzeltildi: {str(q.get('q', ''))[:80]}")
+        elif q.get("type") == "fill" and v.get("also_correct") and len(fits) <= 1:
+            # Düzeltme yoksa: diğer doğru cevapları da kabul et, öğrenci haksız yere yanlış almasın
+            extra = [str(a) for a in v["also_correct"] if isinstance(a, str)][:6]
+            q["accept"] = list(q.get("accept") or []) + extra
+            kept.append(q)
+            notes.append(f"quiz[{i}] ek doğru cevaplar kabul edildi: {extra}")
+        else:
+            notes.append(f"quiz[{i}] atıldı (tek doğru cevap yok): {str(q.get('q', ''))[:80]}")
+    if quiz:
+        data["quiz"] = kept
+
+    print(f"[review] {topic!r}: yazan={written_by} denetleyen={reviewer} düzeltme={len(notes)}")
+    for n in notes:
+        print(f"[review]   - {n}")
+    return data, True
 
 
 def _read_topic():
@@ -456,7 +635,12 @@ def topic_lesson():
             TOPIC_SYSTEM_PROMPT,
             [{"role": "user", "content": TOPIC_USER_TEMPLATE.format(topic=topic)}],
             temperature=0.4,
-            max_tokens=3500,  # ölçüm: ders+quiz ≈ 2000 token; Groq ücretsiz katman 8k token/dk
+            # Ölçüm: prompt ≈ 3400 token, yanıt ≈ 1700-3600 (modelin "düşünme" token'ları dahil).
+            # Groq ücretsiz katman 8k token/dk ve max_tokens'ı peşin sayıyor: 3400 + 4300 < 8000.
+            max_tokens=4300,
+            prefer=LESSON_PREFER,
+            exclude=LESSON_EXCLUDE,
+            timeout=20,
         )
     except AIUnavailable as e:
         return ai_error_response(e)
@@ -465,12 +649,16 @@ def topic_lesson():
         msg = _s(data.get("message")) or "Bu bir İngilizce konusu gibi görünmüyor. Ör: present perfect, articles, conditionals."
         return jsonify({"error": msg}), 422
 
+    data, reviewed = _review(_s(data.get("topic"), 80) or topic, data, provider)
+    if not reviewed:
+        # Denetlenmemiş ders gösterilmez: yanlış bilgi öğretmektense beklemek daha iyi.
+        return jsonify({"error": "Ders hazırlandı ama denetlenemedi (AI kotaları yoğun). Birkaç saniye sonra tekrar dene."}), 503
     lesson = _clean_lesson(data)
     quiz = _clean_quiz(data.get("quiz"))
     if not lesson["topic"] or not lesson["summary"] or not lesson["uses"] or not quiz:
         return jsonify({"error": "Ders tam oluşturulamadı, tekrar dene."}), 502
 
-    result = {"lesson": lesson, "quiz": quiz, "provider": provider}
+    result = {"lesson": lesson, "quiz": quiz, "provider": provider, "reviewed": True}
     topic_cache.put(key, result)
     # Normalize edilmiş adla da önbelleğe al (ör. "present perfekt" → "Present Perfect")
     topic_cache.put(lesson["topic"].lower(), result)
@@ -494,10 +682,16 @@ def topic_quiz():
             [{"role": "user", "content": TOPIC_QUIZ_USER_TEMPLATE.format(topic=topic, previous=prev_text)}],
             temperature=0.8,
             max_tokens=2200,
+            prefer=LESSON_PREFER,
+            exclude=LESSON_EXCLUDE,
+            timeout=20,
         )
     except AIUnavailable as e:
         return ai_error_response(e)
 
+    result, reviewed = _review(topic, {"quiz": result.get("quiz")}, provider)
+    if not reviewed:
+        return jsonify({"error": "Sorular hazırlandı ama denetlenemedi. Birkaç saniye sonra tekrar dene."}), 503
     quiz = _clean_quiz(result.get("quiz"))
     if not quiz:
         return jsonify({"error": "Yeni sorular oluşturulamadı, tekrar dene."}), 502

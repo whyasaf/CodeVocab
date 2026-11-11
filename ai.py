@@ -73,6 +73,15 @@ PROVIDERS = {
         model_env="GEMINI_MODEL",
         default_model="gemini-3.5-flash-lite",  # hızlı; büyük flash modeller ücretsiz katmanda sık 503 veriyor
     ),
+    # Aynı ücretsiz Gemini anahtarıyla ikinci model. Ana model "503 aşırı yoğun" verdiğinde
+    # devreye girer; 503 model bazında olduğu için ikisinin aynı anda dolu olması nadirdir.
+    "gemini-alt": Provider(
+        name="gemini-alt",
+        base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+        key_env="GEMINI_API_KEY",
+        model_env="GEMINI_FALLBACK_MODEL",
+        default_model="gemini-3.1-flash-lite",
+    ),
     # Aynı ücretsiz Groq anahtarıyla ikinci model. Groq kotaları MODEL BAŞINA ayrı tutulur,
     # yani bu sağlayıcı ana modelden bağımsız kendi 8k token/dk hakkına sahip.
     # Kalitesi daha düşük olduğu için zincirin sonunda, son yedek olarak durur.
@@ -89,13 +98,14 @@ PROVIDERS = {
         key_env="OPENROUTER_API_KEY",
         model_env="OPENROUTER_MODEL",
         default_model="openrouter/free",
-        extra_headers={"HTTP-Referer": "https://codevocab.app", "X-Title": "CodeVocab"},
+        extra_headers={"HTTP-Referer": "https://codevocab.whyasaf.com", "X-Title": "CodeVocab"},
     ),
 }
 
-DEFAULT_ORDER = "groq,gemini,openrouter,cerebras,groq-mini"
+DEFAULT_ORDER = "groq,gemini,gemini-alt,openrouter,cerebras,groq-mini"
 COOLDOWN_RATE_LIMIT = 60      # 429'da bekleme süresi bilinmiyorsa kaç saniye atlayalım
-COOLDOWN_SERVER_ERROR = 20    # 5xx / bağlantı hatası sonrası
+COOLDOWN_SERVER_ERROR = 20
+COOLDOWN_TIMEOUT = 60    # 5xx / bağlantı hatası sonrası
 MAX_INLINE_WAIT = 6           # kota bu kadar saniyede açılacaksa hata verme, bekle
 
 
@@ -130,13 +140,15 @@ def _extract_json(text):
         raise
 
 
-def _call(provider, messages, temperature, max_tokens):
+def _call(provider, messages, temperature, max_tokens, timeout=None):
     kwargs = dict(
         model=provider.model,
         messages=messages,
         temperature=temperature,
         max_tokens=max_tokens,
     )
+    if timeout:
+        kwargs["timeout"] = timeout
     if provider.supports_json_mode:
         kwargs["response_format"] = {"type": "json_object"}
     try:
@@ -165,14 +177,21 @@ def _retry_after(err):
     return None
 
 
-def complete_json(system_prompt, messages, temperature=0.3, max_tokens=1200, required_keys=()):
+def complete_json(system_prompt, messages, temperature=0.3, max_tokens=1200, required_keys=(),
+                  prefer=(), exclude=(), timeout=None):
     """
     Sağlayıcıları sırayla dener, ilk geçerli JSON yanıtını döndürür.
     Hepsi kota hatası verirse ve en kısa bekleme süresi MAX_INLINE_WAIT'ten azsa
     bir kez bekleyip yeniden dener.
+    prefer:  bu adlardaki sağlayıcılar öne alınır (ör. denetim geçişi için farklı bir model).
+    exclude: bu adlardaki sağlayıcılar hiç kullanılmaz (ör. ders için zayıf model).
+    timeout: istek başına saniye sınırı (varsayılan: sağlayıcı istemcisinin sınırı).
     Dönen değer: (data: dict, provider_name: str)
     """
-    providers = active_providers()
+    providers = [p for p in active_providers() if p.name not in exclude]
+    if prefer:
+        rank = {name: i for i, name in enumerate(prefer)}
+        providers.sort(key=lambda p: rank.get(p.name, len(rank)))
     if not providers:
         raise AIUnavailable(
             "Hiçbir AI anahtarı tanımlı değil. .env dosyasına en az bir sağlayıcı anahtarı ekle."
@@ -190,7 +209,7 @@ def complete_json(system_prompt, messages, temperature=0.3, max_tokens=1200, req
         all_rate_limited, shortest_wait = True, None
         for provider in queue:
             try:
-                text = _call(provider, full_messages, temperature, max_tokens)
+                text = _call(provider, full_messages, temperature, max_tokens, timeout)
                 data = _extract_json(text)
                 missing = [k for k in required_keys if k not in data]
                 if missing:
@@ -208,7 +227,8 @@ def complete_json(system_prompt, messages, temperature=0.3, max_tokens=1200, req
                 errors.append(f"{provider.name}: HTTP {e.status_code}")
             except (APIConnectionError, APITimeoutError) as e:
                 all_rate_limited = False
-                provider.cooldown_until = time.time() + COOLDOWN_SERVER_ERROR
+                # Zaman aşımı pahalı: aynı sağlayıcıyı bir süre hiç deneme
+                provider.cooldown_until = time.time() + COOLDOWN_TIMEOUT
                 errors.append(f"{provider.name}: {type(e).__name__}")
             except (ValueError, json.JSONDecodeError) as e:
                 all_rate_limited = False
