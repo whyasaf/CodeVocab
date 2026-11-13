@@ -205,22 +205,89 @@ body {
   color: var(--text-3);
 }
 
-.chat-item-del {
+.chat-item-btn {
   display: none;
   padding: 6px;
-  margin-right: 4px;
   border-radius: 6px;
   color: var(--text-3);
 }
 
-.chat-item:hover .chat-item-del,
-.chat-item.active .chat-item-del {
+.chat-item-btn:last-child {
+  margin-right: 4px;
+}
+
+.chat-item:hover .chat-item-btn,
+.chat-item.active .chat-item-btn {
   display: inline-flex;
+}
+
+.chat-item-btn:hover {
+  color: var(--text);
+  background: var(--surface-3);
 }
 
 .chat-item-del:hover {
   color: var(--bad);
-  background: var(--surface-3);
+}
+
+/* Dokunmatik cihazlarda hover yok: butonlar hep görünsün */
+@media (hover: none) {
+  .chat-item .chat-item-btn {
+    display: inline-flex;
+  }
+}
+
+/* Uygulama olarak açıldığında (PWA) çentik/durum çubuğu altında kalmasın */
+@media (display-mode: standalone) {
+  .topbar {
+    height: calc(56px + env(safe-area-inset-top));
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .sidebar {
+    padding-top: calc(14px + env(safe-area-inset-top));
+  }
+}
+
+.install-link {
+  color: var(--accent) !important;
+}
+
+.chat-item.is-editing {
+  padding: 3px;
+}
+
+.chat-item-input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 9px;
+  border: 1px solid var(--accent);
+  border-radius: 8px;
+  outline: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+.topbar-title.is-renamable {
+  cursor: text;
+  border-radius: 8px;
+  padding: 2px 8px;
+  margin-left: -8px;
+  transition: background 0.12s;
+}
+
+.topbar-title.is-renamable:hover {
+  background: var(--surface);
+}
+
+.topbar-title.is-editing {
+  outline: 1px solid var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+  background: var(--bg);
+  text-overflow: clip;
 }
 
 .chat-list-empty {
@@ -308,8 +375,9 @@ body {
 }
 
 .topbar-title {
-  flex: 1;
-  margin: 0;
+  flex: 0 1 auto;
+  min-width: 0;
+  margin: 0 auto 0 0;
   font-size: 14px;
   font-weight: 500;
   color: var(--text-2);
@@ -1336,6 +1404,7 @@ body {
 
   .topbar-title {
     text-align: center;
+    margin: 0 auto;
   }
 
   .messages {
@@ -1370,7 +1439,7 @@ body {
     font-size: 30px;
   }
 
-  .chat-item-del {
+  .chat-item-btn {
     display: inline-flex;
   }
 

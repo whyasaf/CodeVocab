@@ -30,6 +30,16 @@
 <meta name="twitter:image" content="{{ site_url }}/static/og.png" />
 <link rel="icon" type="image/png" href="{{ url_for('static', filename='codevocablogohead.png') }}" />
 <link rel="apple-touch-icon" href="{{ url_for('static', filename='apple-touch-icon.png') }}" />
+<link rel="manifest" href="{{ url_for('static', filename='manifest.webmanifest') }}" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-title" content="CodeVocab" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<script>
+  if ("serviceWorker" in navigator) {
+    addEventListener("load", function () { navigator.serviceWorker.register("/sw.js").catch(function () {}); });
+  }
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
 <link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />

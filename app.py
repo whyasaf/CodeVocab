@@ -207,6 +207,15 @@ def guide():
     return render_template("guide.html")
 
 
+@app.route("/sw.js")
+def service_worker():
+    # Kök adresten sunulmalı ki tüm siteyi (scope "/") kapsasın
+    resp = make_response(app.send_static_file("sw.js"))
+    resp.headers["Content-Type"] = "application/javascript; charset=utf-8"
+    resp.headers["Cache-Control"] = "no-cache"
+    return resp
+
+
 @app.route("/robots.txt")
 def robots():
     body = f"User-agent: *\nAllow: /\nDisallow: /api/\nDisallow: /app\n\nSitemap: {SITE_URL}/sitemap.xml\n"

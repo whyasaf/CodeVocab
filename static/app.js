@@ -259,6 +259,7 @@
     mode: "analyze",
     busy: false,
     search: "",
+    renamingId: null,
   };
   if (!Array.isArray(state.chats)) state.chats = [];
 
@@ -456,15 +457,120 @@
         html += `<div class="chat-group-label">${g}</div>`;
         lastGroup = g;
       }
+      if (c.id === state.renamingId) {
+        html += `
+        <div class="chat-item active is-editing">
+          <input class="chat-item-input" data-rename-id="${c.id}" value="${escapeHtml(c.title)}" maxlength="${MAX_TITLE}" aria-label="Sohbet adı" />
+        </div>`;
+        continue;
+      }
       html += `
         <div class="chat-item ${c.id === state.currentId ? "active" : ""}">
-          <button class="chat-item-link" data-action="open-chat" data-id="${c.id}" title="${escapeHtml(c.title)}">${escapeHtml(c.title)}</button>
-          <button class="chat-item-del" data-action="delete-chat" data-id="${c.id}" aria-label="Sohbeti sil">
+          <button class="chat-item-link" data-action="open-chat" data-id="${c.id}" title="${escapeHtml(c.title)} (yeniden adlandırmak için çift tıkla)">${escapeHtml(c.title)}</button>
+          <button class="chat-item-btn" data-action="rename-chat" data-id="${c.id}" aria-label="Sohbeti yeniden adlandır" title="Yeniden adlandır">
+            <svg viewBox="0 0 24 24" width="14" height="14"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
+          </button>
+          <button class="chat-item-btn chat-item-del" data-action="delete-chat" data-id="${c.id}" aria-label="Sohbeti sil" title="Sil">
             <svg viewBox="0 0 24 24" width="14" height="14"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" /></svg>
           </button>
         </div>`;
     }
     ui.list.innerHTML = html;
+    const input = ui.list.querySelector("[data-rename-id]");
+    if (input && document.activeElement !== input) {
+      input.focus();
+      input.select();
+    }
+  }
+
+  // ───────────────────────── uygulama olarak yükleme (PWA) ─────────────────────────
+
+  const isStandalone = () =>
+    matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+  const isIOS = () => /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  let installPrompt = null;
+
+  function updateInstallButton() {
+    const btn = $("#install-btn");
+    if (!btn) return;
+    btn.hidden = isStandalone() || !(installPrompt || isIOS());
+  }
+
+  addEventListener("beforeinstallprompt", (e) => {
+    e.preventDefault(); // tarayıcının kendi çubuğu yerine kendi butonumuzu göster
+    installPrompt = e;
+    updateInstallButton();
+  });
+  addEventListener("appinstalled", () => {
+    installPrompt = null;
+    updateInstallButton();
+    toast("CodeVocab yüklendi. Ana ekranından açabilirsin.");
+  });
+
+  async function installApp() {
+    if (installPrompt) {
+      installPrompt.prompt();
+      await installPrompt.userChoice.catch(() => null);
+      installPrompt = null;
+      return updateInstallButton();
+    }
+    if (isIOS()) {
+      toast("Safari'de Paylaş simgesine dokun, sonra \"Ana Ekrana Ekle\"yi seç.");
+    }
+  }
+
+  // ───────────────────────── yeniden adlandırma ─────────────────────────
+
+  const MAX_TITLE = 60;
+
+  function commitRename(id, value) {
+    const chat = state.chats.find((c) => c.id === id);
+    const title = String(value || "").replace(/\s+/g, " ").trim().slice(0, MAX_TITLE);
+    if (chat && title && title !== chat.title) {
+      chat.title = title;
+      chat.renamed = true; // otomatik başlık (ör. "Konu: …") artık üzerine yazmasın
+      saveChats(); // updatedAt değişmez: adlandırma sohbetin listedeki yerini değiştirmesin
+    }
+  }
+
+  function startRename(id) {
+    if (!state.chats.some((c) => c.id === id)) return;
+    state.renamingId = id;
+    if (window.innerWidth <= 860) openSidebar();
+    renderSidebar();
+  }
+
+  function endRename(save) {
+    const id = state.renamingId;
+    if (!id) return;
+    const input = ui.list.querySelector("[data-rename-id]");
+    state.renamingId = null; // önce temizle: blur olayı ikinci kez kaydetmesin
+    if (save && input) commitRename(id, input.value);
+    renderAll();
+  }
+
+  // Üst bardaki başlık: tıklayınca yerinde düzenlenir
+  function startTitleEdit() {
+    const chat = currentChat();
+    if (!chat || ui.title.isContentEditable) return;
+    ui.title.contentEditable = "plaintext-only";
+    ui.title.classList.add("is-editing");
+    ui.title.focus();
+    const range = document.createRange();
+    range.selectNodeContents(ui.title);
+    const sel = getSelection();
+    sel.removeAllRanges();
+    sel.addRange(range);
+  }
+
+  function endTitleEdit(save) {
+    if (!ui.title.isContentEditable) return;
+    ui.title.contentEditable = "false";
+    ui.title.classList.remove("is-editing");
+    const chat = currentChat();
+    if (save && chat) commitRename(chat.id, ui.title.textContent);
+    renderAll();
   }
 
   const ICON = {
@@ -818,7 +924,9 @@
     ui.messages.innerHTML = msgs.map((m, i) => renderMessage(m, i === msgs.length - 1)).join("");
     msgs.forEach((m) => m.id && seen.add(m.id));
     ui.app.classList.toggle("is-empty", msgs.length === 0);
-    ui.title.textContent = chat ? chat.title : "Yeni sohbet";
+    if (!ui.title.isContentEditable) ui.title.textContent = chat ? chat.title : "Yeni sohbet";
+    ui.title.classList.toggle("is-renamable", !!chat);
+    ui.title.title = chat ? "Yeniden adlandırmak için tıkla" : "";
     document.title = chat ? `${chat.title} · CodeVocab` : "CodeVocab";
     const target = !state.busy && state.scrollToId;
     if (target) state.scrollToId = null;
@@ -974,7 +1082,7 @@
         const res = await api("/api/topic", { method: "POST", body: JSON.stringify({ topic }) });
         const chat = currentChat();
         // Sohbet başlığını normalize edilmiş konu adıyla güncelle
-        if (chat && chat.messages.filter((m) => m.role === "user").length <= 1) chat.title = `Konu: ${res.lesson.topic}`;
+        if (chat && !chat.renamed && chat.messages.filter((m) => m.role === "user").length <= 1) chat.title = `Konu: ${res.lesson.topic}`;
         const msg = { id: uid(), role: "assistant", kind: "lesson", data: { lesson: res.lesson, quiz: prepQuiz(res.quiz) }, provider: res.provider };
         state.scrollToId = msg.id; // ders uzun: en alta değil dersin başına kaydır
         pushMessage(msg);
@@ -1186,6 +1294,10 @@
         return openChat(t.dataset.id);
       case "delete-chat":
         return deleteChat(t.dataset.id);
+      case "rename-chat":
+        return startRename(t.dataset.id);
+      case "install-app":
+        return installApp();
       case "open-sidebar":
         return openSidebar();
       case "close-sidebar":
@@ -1357,6 +1469,38 @@
     if (e.target === ui.learnedModal) ui.learnedModal.close();
   });
 
+  // Yeniden adlandırma: kenar çubuğu input'u ve üst bar başlığı
+  ui.list.addEventListener("keydown", (e) => {
+    if (!e.target.matches("[data-rename-id]")) return;
+    if (e.key === "Enter") {
+      e.preventDefault();
+      endRename(true);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      endRename(false);
+    }
+  });
+  ui.list.addEventListener("focusout", (e) => {
+    if (e.target.matches("[data-rename-id]")) endRename(true);
+  });
+  ui.list.addEventListener("dblclick", (e) => {
+    const link = e.target.closest(".chat-item-link");
+    if (link) startRename(link.dataset.id);
+  });
+  ui.title.addEventListener("click", startTitleEdit);
+  ui.title.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      endTitleEdit(true);
+    } else if (e.key === "Escape") {
+      e.preventDefault();
+      e.stopPropagation();
+      endTitleEdit(false);
+    }
+  });
+  ui.title.addEventListener("blur", () => endTitleEdit(true));
+
   document.addEventListener("keydown", (e) => {
     if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
       e.preventDefault();
@@ -1382,6 +1526,7 @@
   } catch {}
   applyTheme(document.documentElement.dataset.theme || "dark");
   updateLearnedCount();
+  updateInstallButton();
   setMode("analyze");
   renderAll();
 
