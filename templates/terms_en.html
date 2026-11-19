@@ -1,0 +1,69 @@
+{% extends "_site.html" %}
+{% set page_title = "Terms of Use" %}
+{% set page_description = "CodeVocab terms of use: a free, experimental portfolio project." %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="shell">
+    <span class="pill"><span class="pill-dot"></span>Legal</span>
+    <h1>Terms of Use</h1>
+    <p class="lead">CodeVocab is a free, experimental portfolio project. Please read this short text before using it.</p>
+    <p class="page-meta">Last updated: November 2026</p>
+  </div>
+</section>
+
+<div class="shell doc">
+  <aside class="toc" aria-label="Contents">
+    <p>On this page</p>
+    <ol id="toc-list"></ol>
+  </aside>
+
+  <article class="prose">
+    <h2>1. Parties and acceptance</h2>
+    <p>
+      These Terms of Use set out the conditions for using the CodeVocab platform (the "Service"). By accessing or using
+      the Service, you confirm that you have read, understood and accepted all of these terms.
+    </p>
+
+    <h2>2. Nature of the Service</h2>
+    <p>
+      CodeVocab is offered by the developer whyasaf as an experimental portfolio project. Its main purpose is to
+      showcase the potential of AI in language learning. It is not a commercial software product.
+    </p>
+
+    <h2>3. Responsibility for AI content</h2>
+    <p>The Service generates content in real time using free AI providers (Groq, Google Gemini, OpenRouter).</p>
+    <ul>
+      <li>
+        <strong>No accuracy guarantee:</strong> the generated meanings, pronunciations, scores and example sentences
+        are not guaranteed to be 100% grammatically or contextually correct.
+      </li>
+      <li>
+        <strong>Risk of hallucination:</strong> the AI may sometimes produce wrong or irrelevant information. The
+        developer cannot be held responsible for academic or professional mistakes resulting from this content.
+      </li>
+    </ul>
+
+    <h2>4. Restrictions</h2>
+    <p>When using the Service, you agree to the following rules:</p>
+    <ul>
+      <li>Do not send automated requests (bots, scripts, etc.) that disrupt the system.</li>
+      <li>Do not deliberately push the free API limits.</li>
+      <li>Do not share illegal, threatening or hateful content.</li>
+    </ul>
+
+    <h2>5. Right to change and disclaimer</h2>
+    <p>
+      The developer reserves the right to stop, change or suspend the Service at any time without notice, including
+      because of API restrictions. CodeVocab is provided "as is" with no guarantee of uninterrupted operation.
+    </p>
+
+    <h2>6. Intellectual property</h2>
+    <p>
+      CodeVocab's source code, design, text, logos and images belong to Ömer Asaf Ak (whyasaf); all rights reserved.
+      The source code on GitHub may be viewed for reference and learning only. Without written permission it may not be
+      copied, modified, used in another project, published or used commercially. The Marki logo belongs to Marki.
+    </p>
+  </article>
+</div>
+{% endblock %}

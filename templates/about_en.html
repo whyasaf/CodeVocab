@@ -1,0 +1,136 @@
+{% extends "_site.html" %}
+{% from "_macros.html" import logo %}
+{% set page_title = "About" %}
+{% set page_description = "The story of CodeVocab: from a first software project to a free AI English mentor for every learner. Built by whyasaf." %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="shell">
+    <span class="pill"><span class="pill-dot"></span>About</span>
+    <h1>Born from one question: "Did I write this right?"</h1>
+    <p class="lead">
+      CodeVocab is the first software project of <strong>Ömer Asaf Ak (whyasaf)</strong>. It started as a simple
+      vocabulary app; today it's a free AI mentor for everyone learning English.
+    </p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell">
+    <div class="editorial">
+      <div>
+        <p class="eyebrow">Why?</p>
+        <h2 class="section-title">To end the doubt.</h2>
+      </div>
+      <div>
+        <p>
+          The most tiring moment in learning English is writing a sentence and not being sure it's right. Translation
+          tools change your sentence but never say why. Word lists make you memorise but don't teach you to use.
+        </p>
+        <p>
+          CodeVocab has one job: if your sentence is wrong, explain <em>why</em>; if it's right, leave it
+          alone.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell">
+    <p class="eyebrow">The journey</p>
+    <h2 class="section-title">Three versions, one year.</h2>
+
+    <ol class="timeline">
+      <li>
+        <time>February 2026</time>
+        <h3>v1 · First step</h3>
+        <p>The first version goes live with a 3,000-word pool and Gemini. Word cards and a simple sentence check.</p>
+      </li>
+      <li>
+        <time>April 2026</time>
+        <h3>v2 · Faster AI</h3>
+        <p>Switched to Groq when the free quotas ran out too fast. The mentor prompt was rewritten and checks got sharper.</p>
+      </li>
+      <li class="is-now">
+        <time>November 2026</time>
+        <h3>v3 · A mentor you can chat with</h3>
+        <p>
+          A chat interface with history, a "Study a topic" mode with quizzes, a free AI chain with automatic
+          fallback and a brand-new design.
+        </p>
+      </li>
+    </ol>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell">
+    <p class="eyebrow">Principles</p>
+    <h2 class="section-title">Three things that won't change.</h2>
+
+    <div class="tech-grid principles">
+      <div class="tech-item">
+        <h3>It stays free</h3>
+        <p>No sign-up, no subscription, no ads. It runs entirely on free AI tiers.</p>
+      </div>
+      <div class="tech-item">
+        <h3>Your data, your device</h3>
+        <p>Your chats and progress are stored in your own browser, not on a server.</p>
+      </div>
+      <div class="tech-item">
+        <h3>Don't touch what's right</h3>
+        <p>A correct, natural sentence always scores 100. The mentor never suggests needless "improvements".</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell">
+    <p class="eyebrow">Technology</p>
+    <h2 class="section-title">The engine behind it.</h2>
+    <p class="section-lead">
+      If one AI provider runs out of quota, the request moves to the next one automatically; you won't notice a thing.
+    </p>
+
+    <div class="tech-grid">
+      <div class="tech-item">
+        <h3>AI chain</h3>
+        <p>Models on Groq, Gemini and OpenRouter, with automatic fallback.</p>
+      </div>
+      <div class="tech-item">
+        <h3>Flask <code>Python</code></h3>
+        <p>A light, fast backend running serverless on Vercel.</p>
+      </div>
+      <div class="tech-item">
+        <h3>Vanilla JS</h3>
+        <p>No framework. The UI is plain JavaScript and modern CSS.</p>
+      </div>
+      <div class="tech-item">
+        <h3>SQLite</h3>
+        <p>A light, portable, read-only database for the 2,700+ word pool.</p>
+      </div>
+    </div>
+
+    <div class="stats">
+      <div class="stat"><b>2,700+</b><span>word pool</span></div>
+      <div class="stat"><b>3</b><span>free AI providers</span></div>
+      <div class="stat"><b>0</b><span>personal data stored on the server</span></div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="shell">
+    <div class="cta">
+      <h2>Ready? Let's start.</h2>
+      <p>Write your first sentence or go on a word hunt. No sign-up, no cost.</p>
+      <div class="hero-actions">
+        <a class="btn btn-primary btn-lg" href="/app">Open CodeVocab</a>
+        <a class="btn btn-outline btn-lg" href="/app?mode=vocab">Start a word hunt</a>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

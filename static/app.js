@@ -14,7 +14,15 @@
   const MAX_LEN = 500;
   const HISTORY_FOR_API = 8;
 
-  const SUGGESTIONS = {
+  // ── Dil: İngilizce arayüzde static/i18n-en.js yüklenir; Türkçe metin anahtardır ──
+  const EN = window.CV_EN || null;
+  const tx = (s, vars) => {
+    let out = (EN && EN.strings[s]) || s;
+    if (vars) out = out.replace(/\{(\w+)\}/g, (_, k) => (vars[k] ?? ""));
+    return out;
+  };
+
+  const SUGGESTIONS_TR = {
     analyze: [
       { icon: "clock", title: "I have seen this movie two days ago", sub: "Tense hatası var mı?" },
       { icon: "flag", title: "We should discuss about the plan", sub: "Türkçe kalıp tuzağı" },
@@ -28,6 +36,8 @@
       { icon: "book", title: "nevertheless", sub: "Resmi bağlaç" },
     ],
   };
+
+  const SUGGESTIONS = (EN && EN.suggestions) || SUGGESTIONS_TR;
 
   // Konu kataloğu: "günün kalıbı" ve öneriler buradan seçilir. Kullanıcı istediği konuyu da yazabilir.
   const TOPICS = [
@@ -86,18 +96,21 @@
     const start = dayIndex() % list.length;
     const picks = [0, 7, 14].map((k) => list[(start + k) % list.length]);
     return [
-      { icon: "sun", title: `Günün kalıbı: ${daily.name}`, sub: `${daily.level} · ${daily.tr}`, topic: daily.name },
-      ...picks.map((t) => ({ icon: "cap", title: t.name, sub: `${t.level} · ${t.tr}`, topic: t.name })),
+      { icon: "sun", title: EN ? tx(EN.dailyLabel, { name: daily.name }) : `Günün kalıbı: ${daily.name}`, sub: `${daily.level} · ${topicDesc(daily)}`, topic: daily.name },
+      ...picks.map((t) => ({ icon: "cap", title: t.name, sub: `${t.level} · ${topicDesc(t)}`, topic: t.name })),
     ];
   }
 
-  const HERO_SUB = {
+  const topicDesc = (t) => (EN && EN.topicDesc[t.name]) || t.tr;
+
+  const HERO_SUB_TR = {
     analyze: "İngilizce cümleni yaz, bir mentor gibi düzeltelim.<br />Takıldığın yeri sor, sohbet ederek öğren.",
     word: "Bir kelime yaz ya da rastgele seçki iste.<br />Anlamı, telaffuzu ve üç seviyede örnek cümlesi hazır.",
     topic: "Bir gramer konusu ya da kalıp yaz, ders kartını hazırlayayım.<br />Sonra 5 soruluk mini quiz ile kendini dene.",
   };
 
-  const FOLLOWUPS = ["Neden böyle?", "Daha resmi nasıl yazarım?", "Benzer bir örnek ver"];
+  const HERO_SUB = (EN && EN.heroSub) || HERO_SUB_TR;
+  const FOLLOWUPS = (EN && EN.followups) || ["Neden böyle?", "Daha resmi nasıl yazarım?", "Benzer bir örnek ver"];
 
   // ───────────────────────── helpers ─────────────────────────
 
@@ -118,7 +131,7 @@
         localStorage.setItem(key, JSON.stringify(value));
         return true;
       } catch {
-        toast("Tarayıcı depolama alanı dolu ya da kapalı.");
+        toast(tx("Tarayıcı depolama alanı dolu ya da kapalı."));
         return false;
       }
     },
@@ -171,7 +184,7 @@
         ...options,
       });
     } catch {
-      throw new Error("Sunucuya ulaşılamadı. İnternet bağlantını kontrol et.");
+      throw new Error(tx("Sunucuya ulaşılamadı. İnternet bağlantını kontrol et."));
     }
     let body = null;
     try {
@@ -180,7 +193,7 @@
       /* boş/HTML yanıt */
     }
     if (!res.ok || (body && body.error)) {
-      throw new Error((body && body.error) || `Sunucu hatası (${res.status}).`);
+      throw new Error((body && body.error) || tx("Sunucu hatası ({status}).", { status: res.status }));
     }
     return body;
   }
@@ -238,7 +251,7 @@
   }
 
   function speak(text, btn) {
-    if (!("speechSynthesis" in window)) return toast("Tarayıcın sesli okumayı desteklemiyor.");
+    if (!("speechSynthesis" in window)) return toast(tx("Tarayıcın sesli okumayı desteklemiyor."));
     speechSynthesis.cancel();
     const u = new SpeechSynthesisUtterance(text);
     u.lang = "en-US";
@@ -352,7 +365,7 @@
     if (!chat) {
       chat = {
         id: uid(),
-        title: titleSeed.slice(0, 60) || "Yeni sohbet",
+        title: titleSeed.slice(0, 60) || tx("Yeni sohbet"),
         createdAt: Date.now(),
         updatedAt: Date.now(),
         messages: [],
@@ -430,11 +443,11 @@
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const diff = (today - new Date(d.getFullYear(), d.getMonth(), d.getDate())) / 864e5;
-    if (diff <= 0) return "Bugün";
-    if (diff === 1) return "Dün";
-    if (diff < 7) return "Son 7 gün";
-    if (diff < 30) return "Son 30 gün";
-    return "Daha eski";
+    if (diff <= 0) return tx("Bugün");
+    if (diff === 1) return tx("Dün");
+    if (diff < 7) return tx("Son 7 gün");
+    if (diff < 30) return tx("Son 30 gün");
+    return tx("Daha eski");
   }
 
   function renderSidebar() {
@@ -446,7 +459,7 @@
         c.messages.some((m) => m.role === "user" && m.text.toLowerCase().includes(q)),
     );
     if (!chats.length) {
-      ui.list.innerHTML = `<p class="chat-list-empty">${q ? "Sonuç bulunamadı." : "Henüz sohbet yok. İlk cümleni yaz!"}</p>`;
+      ui.list.innerHTML = `<p class="chat-list-empty">${q ? tx("Sonuç bulunamadı.") : tx("Henüz sohbet yok. İlk cümleni yaz!")}</p>`;
       return;
     }
     let html = "";
@@ -460,17 +473,17 @@
       if (c.id === state.renamingId) {
         html += `
         <div class="chat-item active is-editing">
-          <input class="chat-item-input" data-rename-id="${c.id}" value="${escapeHtml(c.title)}" maxlength="${MAX_TITLE}" aria-label="Sohbet adı" />
+          <input class="chat-item-input" data-rename-id="${c.id}" value="${escapeHtml(c.title)}" maxlength="${MAX_TITLE}" aria-label="${tx("Sohbet adı")}" />
         </div>`;
         continue;
       }
       html += `
         <div class="chat-item ${c.id === state.currentId ? "active" : ""}">
-          <button class="chat-item-link" data-action="open-chat" data-id="${c.id}" title="${escapeHtml(c.title)} (yeniden adlandırmak için çift tıkla)">${escapeHtml(c.title)}</button>
-          <button class="chat-item-btn" data-action="rename-chat" data-id="${c.id}" aria-label="Sohbeti yeniden adlandır" title="Yeniden adlandır">
+          <button class="chat-item-link" data-action="open-chat" data-id="${c.id}" title="${escapeHtml(c.title)} ${tx("(yeniden adlandırmak için çift tıkla)")}">${escapeHtml(c.title)}</button>
+          <button class="chat-item-btn" data-action="rename-chat" data-id="${c.id}" aria-label="${tx("Sohbeti yeniden adlandır")}" title="${tx("Yeniden adlandır")}">
             <svg viewBox="0 0 24 24" width="14" height="14"><path d="M12 20h9" /><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" /></svg>
           </button>
-          <button class="chat-item-btn chat-item-del" data-action="delete-chat" data-id="${c.id}" aria-label="Sohbeti sil" title="Sil">
+          <button class="chat-item-btn chat-item-del" data-action="delete-chat" data-id="${c.id}" aria-label="${tx("Sohbeti sil")}" title="${tx("Sil")}">
             <svg viewBox="0 0 24 24" width="14" height="14"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" /></svg>
           </button>
         </div>`;
@@ -505,7 +518,7 @@
   addEventListener("appinstalled", () => {
     installPrompt = null;
     updateInstallButton();
-    toast("CodeVocab yüklendi. Ana ekranından açabilirsin.");
+    toast(tx("CodeVocab yüklendi. Ana ekranından açabilirsin."));
   });
 
   async function installApp() {
@@ -516,7 +529,7 @@
       return updateInstallButton();
     }
     if (isIOS()) {
-      toast("Safari'de Paylaş simgesine dokun, sonra \"Ana Ekrana Ekle\"yi seç.");
+      toast(tx('Safari\'de Paylaş simgesine dokun, sonra "Ana Ekrana Ekle"yi seç.'));
     }
   }
 
@@ -594,10 +607,10 @@
   };
 
   function scoreInfo(score) {
-    if (score >= 95) return { label: "Mükemmel", color: "var(--good)", sub: "Native speaker böyle yazar." };
-    if (score >= 80) return { label: "Gayet iyi", color: "var(--info)", sub: "Küçük bir dokunuş yeterli." };
-    if (score >= 60) return { label: "Geliştirilebilir", color: "var(--warn)", sub: "Önemli bir hata var." };
-    return { label: "Tekrar dene", color: "var(--bad)", sub: "Cümlenin yapısı bozulmuş." };
+    if (score >= 95) return { label: tx("Mükemmel"), color: "var(--good)", sub: tx("Native speaker böyle yazar.") };
+    if (score >= 80) return { label: tx("Gayet iyi"), color: "var(--info)", sub: tx("Küçük bir dokunuş yeterli.") };
+    if (score >= 60) return { label: tx("Geliştirilebilir"), color: "var(--warn)", sub: tx("Önemli bir hata var.") };
+    return { label: tx("Tekrar dene"), color: "var(--bad)", sub: tx("Cümlenin yapısı bozulmuş.") };
   }
 
   function renderAnalysis(m, isLast) {
@@ -621,18 +634,18 @@
         ${
           d.corrected_sentence
             ? `<div class="card-section">
-                <p class="label">${d.score >= 100 ? "Cümlen" : "Doğrusu"}</p>
+                <p class="label">${d.score >= 100 ? tx("Cümlen") : tx("Doğrusu")}</p>
                 <div class="corrected">
                   <span class="corrected-text">${diff || escapeHtml(d.corrected_sentence)}</span>
                   <span class="mini-actions">
-                    <button class="mini-btn" data-action="speak" data-text="${escapeHtml(d.corrected_sentence)}" aria-label="Dinle">${ICON.speaker}</button>
-                    <button class="mini-btn" data-action="copy" data-text="${escapeHtml(d.corrected_sentence)}" aria-label="Kopyala">${ICON.copy}</button>
+                    <button class="mini-btn" data-action="speak" data-text="${escapeHtml(d.corrected_sentence)}" aria-label="${tx("Dinle")}">${ICON.speaker}</button>
+                    <button class="mini-btn" data-action="copy" data-text="${escapeHtml(d.corrected_sentence)}" aria-label="${tx("Kopyala")}">${ICON.copy}</button>
                   </span>
                 </div>
               </div>`
             : ""
         }
-        ${d.explanation ? `<div class="card-section"><p class="label">Mentor notu</p><div class="explanation">${rich(d.explanation)}</div></div>` : ""}
+        ${d.explanation ? `<div class="card-section"><p class="label">${tx("Mentor notu")}</p><div class="explanation">${rich(d.explanation)}</div></div>` : ""}
         ${d.motivation ? `<div class="card-section motivation">${escapeHtml(stripTags(d.motivation))}</div>` : ""}
       </div>
       ${isLast ? followupChips() : ""}`;
@@ -654,7 +667,7 @@
         <div class="level-row">
           <span class="level-badge ${l}">${l}</span>
           <span class="level-text">${escapeHtml(d.sentences[l])}</span>
-          <button class="mini-btn" data-action="speak" data-text="${escapeHtml(d.sentences[l])}" aria-label="Dinle">${ICON.speaker}</button>
+          <button class="mini-btn" data-action="speak" data-text="${escapeHtml(d.sentences[l])}" aria-label="${tx("Dinle")}">${ICON.speaker}</button>
         </div>`,
       )
       .join("");
@@ -669,7 +682,7 @@
                 ${d.part_of_speech ? `<span class="pos-pill">${escapeHtml(d.part_of_speech)}</span>` : ""}
               </div>
             </div>
-            <button class="mini-btn speak-lg" data-action="speak" data-text="${escapeHtml(d.word)}" aria-label="Telaffuzu dinle">${ICON.speaker}</button>
+            <button class="mini-btn speak-lg" data-action="speak" data-text="${escapeHtml(d.word)}" aria-label="${tx("Telaffuzu dinle")}">${ICON.speaker}</button>
           </div>
           <div class="meaning">${escapeHtml(d.meaning_tr)}</div>
         </div>
@@ -677,9 +690,9 @@
         ${d.tip ? `<div class="card-section tip">${ICON.bulb}<span>${escapeHtml(d.tip)}</span></div>` : ""}
         <div class="card-section card-actions">
           <button class="btn ${known ? "is-known" : "btn-primary"}" data-action="toggle-known" data-word="${escapeHtml(d.word)}">
-            ${ICON.check} ${known ? "Öğrenildi" : "Biliyorum"}
+            ${ICON.check} ${known ? tx("Öğrenildi") : tx("Biliyorum")}
           </button>
-          <button class="btn btn-outline" data-action="practice" data-word="${escapeHtml(d.word)}">${ICON.pen} Cümle kur</button>
+          <button class="btn btn-outline" data-action="practice" data-word="${escapeHtml(d.word)}">${ICON.pen} ${tx("Cümle kur")}</button>
           <button class="btn btn-outline" data-action="random-words">${ICON.dice} Yeni kelimeler</button>
         </div>
       </div>`;
@@ -688,7 +701,7 @@
   // ───────── Konu: ders kartı + quiz ─────────
 
   function speakBtn(text) {
-    return `<button class="mini-btn" data-action="speak" data-text="${escapeHtml(text)}" aria-label="Dinle">${ICON.speaker}</button>`;
+    return `<button class="mini-btn" data-action="speak" data-text="${escapeHtml(text)}" aria-label="${tx("Dinle")}">${ICON.speaker}</button>`;
   }
 
   /** Model metninde <b> dışında etiket olmasın; satır içi güvenli HTML */
@@ -736,21 +749,21 @@
         </div>
         ${
           L.formula.length
-            ? `<div class="card-section"><p class="label">Formül</p><div class="formula">${L.formula
+            ? `<div class="card-section"><p class="label">${tx("Formül")}</p><div class="formula">${L.formula
                 .map((f) => `<code>${escapeHtml(f)}</code>`)
                 .join("\n")}</div></div>`
             : ""
         }
-        ${uses ? `<div class="card-section"><p class="label">Ne zaman kullanılır?</p><div class="uses">${uses}</div></div>` : ""}
+        ${uses ? `<div class="card-section"><p class="label">${tx("Ne zaman kullanılır?")}</p><div class="uses">${uses}</div></div>` : ""}
         ${
           L.turkish_link
-            ? `<div class="card-section lesson-callout">${ICON.link}<div><p class="label">Türkçe ile karşılaştır</p><div>${rich(L.turkish_link)}</div></div></div>`
+            ? `<div class="card-section lesson-callout">${ICON.link}<div><p class="label">${tx("Türkçe ile karşılaştır")}</p><div>${rich(L.turkish_link)}</div></div></div>`
             : ""
         }
-        ${traps ? `<div class="card-section"><p class="label">Türklerin düştüğü tuzaklar</p><div class="traps">${traps}</div></div>` : ""}
+        ${traps ? `<div class="card-section"><p class="label">${tx("Türklerin düştüğü tuzaklar")}</p><div class="traps">${traps}</div></div>` : ""}
         ${
           c
-            ? `<div class="card-section"><p class="label">${escapeHtml(c.with)} ile farkı</p>
+            ? `<div class="card-section"><p class="label">${tx("{w} ile farkı", { w: escapeHtml(c.with) })}</p>
                 <div class="compare-text">${rich(c.text)}</div>
                 <div class="compare-pair">
                   ${c.a ? `<div class="compare-item"><span class="compare-tag">${escapeHtml(L.topic)}</span>${escapeHtml(c.a)}</div>` : ""}
@@ -760,7 +773,7 @@
         }
         ${
           L.signal_words.length
-            ? `<div class="card-section"><p class="label">Sinyal kelimeler</p><div class="signal-words">${L.signal_words
+            ? `<div class="card-section"><p class="label">${tx("Sinyal kelimeler")}</p><div class="signal-words">${L.signal_words
                 .map((w) => `<span>${escapeHtml(w)}</span>`)
                 .join("")}</div></div>`
             : ""
@@ -804,19 +817,19 @@
         .join("")}</div>`;
     } else if (!answered) {
       body = `<form class="quiz-fill" data-mid="${m.id}" data-qi="${i}">
-          <input type="text" name="answer" placeholder="Boşluğa ne gelmeli?" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="60" aria-label="Cevap" />
-          <button type="submit" class="btn btn-primary">Kontrol et</button>
+          <input type="text" name="answer" placeholder="${tx("Boşluğa ne gelmeli?")}" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="60" aria-label="${tx("Cevap")}" />
+          <button type="submit" class="btn btn-primary">${tx("Kontrol et")}</button>
         </form>`;
     }
     const feedback = answered
       ? `<div class="quiz-feedback ${q.ok ? "ok" : "bad"}">
           <span class="fb-icon">${q.ok ? ICON.check : ICON.x}</span>
           <div>
-            <b>${q.ok ? "Doğru!" : `Doğrusu: ${escapeHtml(q.answer)}`}</b>
+            <b>${q.ok ? tx("Doğru!") : tx("Doğrusu: {a}", { a: escapeHtml(q.answer) })}</b>
             ${q.explain ? `<span>${inline(q.explain)}</span>` : ""}
             ${
               !q.ok
-                ? `<button class="link-btn" data-action="quiz-dispute" data-mid="${m.id}" data-qi="${i}">Benim cevabım da doğru olabilir mi? Mentora sor →</button>`
+                ? `<button class="link-btn" data-action="quiz-dispute" data-mid="${m.id}" data-qi="${i}">${tx("Benim cevabım da doğru olabilir mi? Mentora sor →")}</button>`
                 : ""
             }
           </div>
@@ -826,7 +839,7 @@
       <div class="quiz-q ${answered ? (q.ok ? "is-ok" : "is-bad") : ""}" data-qid="${m.id}-${i}">
         <div class="quiz-q-head">
           <span class="quiz-num">${i + 1}</span>
-          <span class="quiz-type">${q.type === "choice" ? "Doğru seçeneği bul" : "Boşluğu doldur"}</span>
+          <span class="quiz-type">${q.type === "choice" ? tx("Doğru seçeneği bul") : tx("Boşluğu doldur")}</span>
         </div>
         <p class="quiz-text">${renderBlank(q)}</p>
         ${body}
@@ -840,13 +853,13 @@
       const n = quiz.filter((q) => q.user != null).length;
       return `<div class="quiz-foot pending" data-foot="${m.id}">
           <div class="quiz-progress"><span style="width:${(n / quiz.length) * 100}%"></span></div>
-          <span class="quiz-progress-label">${n}/${quiz.length} cevaplandı</span>
+          <span class="quiz-progress-label">${tx("{n}/{total} cevaplandı", { n, total: quiz.length })}</span>
         </div>`;
     }
     const score = quizScore(quiz);
     const pct = score / quiz.length;
     const msg =
-      pct === 1 ? "Kusursuz! Bu kalıp artık senin. 🎯" : pct >= 0.6 ? "İyi gidiyor, yanlışlara bir kez daha göz at. 💪" : "Dersi bir kez daha oku, sonra yeni sorularla dene. 📚";
+      pct === 1 ? tx("Kusursuz! Bu kalıp artık senin. 🎯") : pct >= 0.6 ? tx("İyi gidiyor, yanlışlara bir kez daha göz at. 💪") : tx("Dersi bir kez daha oku, sonra yeni sorularla dene. 📚");
     const topic = quizTopic(m);
     return `<div class="quiz-foot done" data-foot="${m.id}" style="--score-color:${pct === 1 ? "var(--good)" : pct >= 0.6 ? "var(--info)" : "var(--warn)"}">
         <div class="quiz-result">
@@ -854,9 +867,9 @@
           <span>${msg}</span>
         </div>
         <div class="card-actions">
-          <button class="btn btn-primary" data-action="quiz-more" data-mid="${m.id}">${ICON.retry} Yeni sorular</button>
-          <button class="btn btn-outline" data-action="topic-ask" data-topic="${escapeHtml(topic)}">${ICON.chat} Soru sor</button>
-          <button class="btn btn-outline" data-action="topic-new">${ICON.cap} Başka konu</button>
+          <button class="btn btn-primary" data-action="quiz-more" data-mid="${m.id}">${ICON.retry} ${tx("Yeni sorular")}</button>
+          <button class="btn btn-outline" data-action="topic-ask" data-topic="${escapeHtml(topic)}">${ICON.chat} ${tx("Soru sor")}</button>
+          <button class="btn btn-outline" data-action="topic-new">${ICON.cap} ${tx("Başka konu")}</button>
         </div>
       </div>`;
   }
@@ -867,10 +880,10 @@
       <div class="card quiz">
         <div class="card-section quiz-head">
           <div>
-            <p class="label">Mini quiz</p>
+            <p class="label">${tx("Mini quiz")}</p>
             <h4>${escapeHtml(quizTopic(m))}</h4>
           </div>
-          <span class="quiz-count">${quiz.length} soru</span>
+          <span class="quiz-count">${tx("{n} soru", { n: quiz.length })}</span>
         </div>
         <div class="quiz-list">${quiz.map((_, i) => renderQuestion(m, i)).join("")}</div>
         ${renderQuizFoot(m)}
@@ -879,10 +892,10 @@
 
   function renderPicker(m) {
     const words = m.data.words || [];
-    if (!words.length) return `<div class="reply-text"><p>Tebrikler, havuzdaki tüm kelimeleri öğrenmişsin! 🎉</p></div>`;
+    if (!words.length) return `<div class="reply-text"><p>${tx("Tebrikler, havuzdaki tüm kelimeleri öğrenmişsin! 🎉")}</p></div>`;
     return `
       <div class="word-picker">
-        <p>Birini seç, kartını hazırlayayım:</p>
+        <p>${tx("Birini seç, kartını hazırlayayım:")}</p>
         <div class="word-chips">${words
           .map((w) => `<button class="word-chip" data-action="pick-word" data-word="${escapeHtml(w)}">${escapeHtml(w)}</button>`)
           .join("")}</div>
@@ -902,10 +915,10 @@
     else if (m.kind === "quiz") body = renderQuiz(m);
     else if (m.kind === "error")
       body = `<div class="error-text"><span>${escapeHtml(m.data.message)}</span>${
-        m.data.retry && isLast ? `<button class="chip" data-action="retry" data-id="${m.id}">${ICON.retry} Tekrar dene</button>` : ""
+        m.data.retry && isLast ? `<button class="chip" data-action="retry" data-id="${m.id}">${ICON.retry} ${tx("Tekrar dene")}</button>` : ""
       }</div>`;
     else if (m.kind === "loading")
-      body = `<div class="typing"><span class="typing-dots"><i></i><i></i><i></i></span><span class="typing-label">${escapeHtml(m.label || "Düşünüyor…")}</span></div>`;
+      body = `<div class="typing"><span class="typing-dots"><i></i><i></i><i></i></span><span class="typing-label">${escapeHtml(m.label || tx("Düşünüyor…"))}</span></div>`;
     return `<div class="msg msg-ai${fresh(m)}" data-mid="${m.id || ""}">${AVATAR}<div class="msg-body">${body}</div></div>`;
   }
 
@@ -924,9 +937,9 @@
     ui.messages.innerHTML = msgs.map((m, i) => renderMessage(m, i === msgs.length - 1)).join("");
     msgs.forEach((m) => m.id && seen.add(m.id));
     ui.app.classList.toggle("is-empty", msgs.length === 0);
-    if (!ui.title.isContentEditable) ui.title.textContent = chat ? chat.title : "Yeni sohbet";
+    if (!ui.title.isContentEditable) ui.title.textContent = chat ? chat.title : tx("Yeni sohbet");
     ui.title.classList.toggle("is-renamable", !!chat);
-    ui.title.title = chat ? "Yeniden adlandırmak için tıkla" : "";
+    ui.title.title = chat ? tx("Yeniden adlandırmak için tıkla") : "";
     document.title = chat ? `${chat.title} · CodeVocab` : "CodeVocab";
     const target = !state.busy && state.scrollToId;
     if (target) state.scrollToId = null;
@@ -976,11 +989,12 @@
 
   // ───────────────────────── composer ─────────────────────────
 
-  const PLACEHOLDER = {
+  const PLACEHOLDER_TR = {
     analyze: "İngilizce bir cümle yaz ya da bir şey sor…",
     word: "Bir İngilizce kelime yaz ya da Rastgele'ye bas…",
     topic: "Bir konu yaz: present perfect, articles, used to…",
   };
+  const PLACEHOLDER = (EN && EN.placeholder) || PLACEHOLDER_TR;
   const MAX_TOPIC = 80;
 
   function setMode(mode) {
@@ -1027,7 +1041,7 @@
   }
 
   function pushError(err, retry) {
-    pushMessage({ role: "assistant", kind: "error", data: { message: err.message || "Bir hata oluştu.", retry } });
+    pushMessage({ role: "assistant", kind: "error", data: { message: err.message || tx("Bir hata oluştu."), retry } });
   }
 
   function runAnalyze(text) {
@@ -1044,7 +1058,7 @@
       } catch (err) {
         pushError(err, { type: "analyze", text });
       }
-    }, "Düşünüyor…");
+    }, tx("Düşünüyor…"));
   }
 
   function runWord(word) {
@@ -1055,7 +1069,7 @@
       } catch (err) {
         pushError(err, { type: "word", word });
       }
-    }, "Kelime kartı hazırlanıyor…");
+    }, tx("Kelime kartı hazırlanıyor…"));
   }
 
   function runRandom() {
@@ -1069,7 +1083,7 @@
       } catch (err) {
         pushError(err, { type: "random" });
       }
-    }, "Kelimeler seçiliyor…");
+    }, tx("Kelimeler seçiliyor…"));
   }
 
   function prepQuiz(quiz) {
@@ -1082,17 +1096,17 @@
         const res = await api("/api/topic", { method: "POST", body: JSON.stringify({ topic }) });
         const chat = currentChat();
         // Sohbet başlığını normalize edilmiş konu adıyla güncelle
-        if (chat && !chat.renamed && chat.messages.filter((m) => m.role === "user").length <= 1) chat.title = `Konu: ${res.lesson.topic}`;
+        if (chat && !chat.renamed && chat.messages.filter((m) => m.role === "user").length <= 1) chat.title = tx("Konu: {topic}", { topic: res.lesson.topic });
         const msg = { id: uid(), role: "assistant", kind: "lesson", data: { lesson: res.lesson, quiz: prepQuiz(res.quiz) }, provider: res.provider };
         state.scrollToId = msg.id; // ders uzun: en alta değil dersin başına kaydır
         pushMessage(msg);
         // Dersten sonra aynı sohbette soru sorabilsin diye analiz moduna geç
         setMode("analyze");
-        ui.input.placeholder = `"${res.lesson.topic}" hakkında soru sor ya da bu kalıpla bir cümle kur…`;
+        ui.input.placeholder = tx('"{topic}" hakkında soru sor ya da bu kalıpla bir cümle kur…', { topic: res.lesson.topic });
       } catch (err) {
         pushError(err, { type: "topic", topic });
       }
-    }, "Ders hazırlanıyor ve denetleniyor… (10-15 sn)");
+    }, tx("Ders hazırlanıyor ve denetleniyor… (10-15 sn)"));
   }
 
   function runTopicQuiz(topic, previous) {
@@ -1105,7 +1119,7 @@
       } catch (err) {
         pushError(err, { type: "topicQuiz", topic, previous });
       }
-    }, "Yeni sorular hazırlanıyor ve denetleniyor…");
+    }, tx("Yeni sorular hazırlanıyor ve denetleniyor…"));
   }
 
   function findMessage(mid) {
@@ -1143,11 +1157,11 @@
   function submit(text) {
     text = (text ?? ui.input.value).trim();
     if (!text || state.busy) return;
-    if (state.mode === "analyze" && text.length > MAX_LEN) return toast(`En fazla ${MAX_LEN} karakter yazabilirsin.`);
+    if (state.mode === "analyze" && text.length > MAX_LEN) return toast(tx("En fazla {n} karakter yazabilirsin.", { n: MAX_LEN }));
 
     if (state.mode === "topic") {
-      if (text.length > MAX_TOPIC) return toast(`Konu adı en fazla ${MAX_TOPIC} karakter olabilir.`);
-      ensureChat(`Konu: ${text}`);
+      if (text.length > MAX_TOPIC) return toast(tx("Konu adı en fazla {n} karakter olabilir.", { n: MAX_TOPIC }));
+      ensureChat(tx("Konu: {topic}", { topic: text }));
       pushMessage({ role: "user", text: `📘 ${text}` });
       ui.input.value = "";
       autosize();
@@ -1156,8 +1170,8 @@
 
     if (state.mode === "word") {
       const word = text.toLowerCase();
-      if (!/^[a-z][a-z'\- ]{0,39}$/.test(word)) return toast("Sadece İngilizce bir kelime yaz (ör. awkward).");
-      ensureChat(`Kelime: ${word}`);
+      if (!/^[a-z][a-z'\- ]{0,39}$/.test(word)) return toast(tx("Sadece İngilizce bir kelime yaz (ör. awkward)."));
+      ensureChat(tx("Kelime: {w}", { w: word }));
       pushMessage({ role: "user", text: word });
       ui.input.value = "";
       autosize();
@@ -1174,7 +1188,7 @@
 
   function requestRandom() {
     if (state.busy) return;
-    ensureChat("Kelime avı");
+    ensureChat(tx("Kelime avı"));
     pushMessage({ role: "user", text: "🎲 Rastgele kelimeler" });
     runRandom();
   }
@@ -1200,7 +1214,7 @@
 
   function deleteChat(id) {
     const chat = state.chats.find((c) => c.id === id);
-    if (!chat || !confirm(`"${chat.title}" sohbeti silinsin mi?`)) return;
+    if (!chat || !confirm(tx('"{title}" sohbeti silinsin mi?', { title: chat.title }))) return;
     state.chats = state.chats.filter((c) => c.id !== id);
     if (state.currentId === id) state.currentId = null;
     saveChats();
@@ -1220,7 +1234,7 @@
 
     const topicHtml = topics.length
       ? `<div class="learned-section">
-          <p class="label">Çalışılan konular · ${topics.length}</p>
+          <p class="label">${tx("Çalışılan konular · {n}", { n: topics.length })}</p>
           <div class="topic-list">${topics
             .map((t) => {
               const color = t.best === 100 ? "var(--good)" : t.best >= 60 ? "var(--info)" : "var(--warn)";
@@ -1230,7 +1244,7 @@
                     <span>${escapeHtml([t.level, t.name_tr].filter(Boolean).join(" · "))}</span>
                   </span>
                   <span class="topic-row-score" style="--c:${color}">
-                    <b>%${t.best}</b><span>${t.attempts} deneme</span>
+                    ${EN ? `<b>${t.best}%</b><span>${t.attempts} attempts</span>` : `<b>%${t.best}</b><span>${t.attempts} deneme</span>`}
                   </span>
                 </button>`;
             })
@@ -1240,13 +1254,13 @@
 
     const wordHtml = words.length
       ? `<div class="learned-section">
-          <p class="label">Öğrenilen kelimeler · ${words.length}</p>
+          <p class="label">${tx("Öğrenilen kelimeler · {n}", { n: words.length })}</p>
           <div class="learned-grid">${[...words]
             .reverse()
             .map(
               (w) => `<span class="learned-tag">
                 <button class="open-word" data-action="learned-open" data-word="${escapeHtml(w)}">${escapeHtml(w)}</button>
-                <button data-action="learned-remove" data-word="${escapeHtml(w)}" aria-label="${escapeHtml(w)} kelimesini listeden çıkar">
+                <button data-action="learned-remove" data-word="${escapeHtml(w)}" aria-label="${tx("{w} kelimesini listeden çıkar", { w: escapeHtml(w) })}">
                   <svg viewBox="0 0 24 24" width="12" height="12"><path d="M18 6 6 18M6 6l12 12"/></svg>
                 </button></span>`,
             )
@@ -1257,13 +1271,13 @@
     const total = words.length + topics.length;
     ui.learnedBody.innerHTML = total
       ? `<div class="learned-stat"><b>${total}</b><span>${words.length} kelime · ${topics.length} konu</span></div>${topicHtml}${wordHtml}`
-      : `<p class="empty-note">Henüz bir şey yok.<br/>Kelime modunda "Biliyorum" de ya da Konu modunda bir quiz bitir.</p>`;
+      : `<p class="empty-note">${tx('Henüz bir şey yok.<br/>Kelime modunda "Biliyorum" de ya da Konu modunda bir quiz bitir.')}</p>`;
     if (!ui.learnedModal.open) ui.learnedModal.showModal();
   }
 
   function applyTheme(theme) {
     document.documentElement.dataset.theme = theme;
-    ui.themeLabel.textContent = theme === "dark" ? "Açık tema" : "Koyu tema";
+    ui.themeLabel.textContent = theme === "dark" ? tx("Açık tema") : tx("Koyu tema");
     document.querySelector('meta[name="theme-color"]').content = theme === "dark" ? "#000000" : "#fafafa";
   }
 
@@ -1276,7 +1290,7 @@
         setTimeout(() => (btn.innerHTML = prev), 1200);
       }
     } catch {
-      toast("Kopyalanamadı.");
+      toast(tx("Kopyalanamadı."));
     }
   }
 
@@ -1315,13 +1329,13 @@
         const w = t.dataset.word;
         const now = !isKnown(w);
         setKnown(w, now);
-        if (now) toast(`"${w}" öğrenilenlere eklendi.`);
+        if (now) toast(tx('"{w}" öğrenilenlere eklendi.', { w }));
         return renderMessages();
       }
       case "practice":
         setMode("analyze");
         ui.input.value = "";
-        ui.input.placeholder = `"${t.dataset.word}" kelimesiyle bir cümle kur…`;
+        ui.input.placeholder = tx('"{w}" kelimesiyle bir cümle kur…', { w: t.dataset.word });
         return ui.input.focus();
       case "followup":
         if (state.busy) return;
@@ -1351,8 +1365,10 @@
         const m = findMessage(t.dataset.mid);
         const q = m?.data.quiz[+t.dataset.qi];
         if (!q) return;
-        const how = q.type === "choice" ? `"${q.user}" şıkkını seçtim` : `boşluğa "${q.user}" yazdım`;
-        const text = `Quizde "${q.q}" sorusunda ${how}, doğrusu "${q.answer}" dendi. Benim cevabım da doğru kabul edilebilir mi?`;
+        const text =
+          q.type === "choice"
+            ? tx('Quizde "{q}" sorusunda "{u}" şıkkını seçtim, doğrusu "{a}" dendi. Benim cevabım da doğru kabul edilebilir mi?', { q: q.q, u: q.user, a: q.answer })
+            : tx('Quizde "{q}" sorusunda boşluğa "{u}" yazdım, doğrusu "{a}" dendi. Benim cevabım da doğru kabul edilebilir mi?', { q: q.q, u: q.user, a: q.answer });
         setMode("analyze");
         pushMessage({ role: "user", text });
         return runAnalyze(text);
@@ -1373,7 +1389,7 @@
       case "topic-ask":
         setMode("analyze");
         ui.input.value = "";
-        ui.input.placeholder = `"${t.dataset.topic}" hakkında soru sor ya da bu kalıpla bir cümle kur…`;
+        ui.input.placeholder = tx('"{topic}" hakkında soru sor ya da bu kalıpla bir cümle kur…', { topic: t.dataset.topic });
         return ui.input.focus();
       case "topic-new":
         newChat({ focus: false });
@@ -1529,6 +1545,7 @@
   updateInstallButton();
   setMode("analyze");
   renderAll();
+  requestAnimationFrame(() => $("#splash")?.classList.remove("is-on"));
 
   // Bağlantıdan gelenler: /app?q=cümle (hemen analiz), /app?mode=vocab|chat|topic
   const params = new URLSearchParams(location.search);
@@ -1555,7 +1572,7 @@
 
   api("/api/health")
     .then((h) => {
-      if (!h.providers?.length) toast("Sunucuda AI anahtarı tanımlı değil (.env).");
+      if (!h.providers?.length) toast(tx("Sunucuda AI anahtarı tanımlı değil (.env)."));
     })
     .catch(() => {});
 })();

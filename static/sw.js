@@ -2,7 +2,7 @@
    - Sayfalar: önce ağ, bağlantı yoksa önbellekteki uygulama kabuğu (/app).
    - Statik dosyalar (?v= ile sürümlü): önce önbellek, yoksa ağ.
    - /api/*: asla önbelleğe alınmaz (AI yanıtları her zaman canlı). */
-const CACHE = "cv-shell-v1";
+const CACHE = "cv-shell-v2";
 const SHELL = "/app";
 
 self.addEventListener("install", (event) => {

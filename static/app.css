@@ -45,7 +45,8 @@ body {
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: 14px 10px 12px;
+  /* env(): çentikli telefonlarda menü durum çubuğunun altında kalmasın (çentik yoksa 0) */
+  padding: calc(14px + env(safe-area-inset-top)) 10px max(12px, env(safe-area-inset-bottom));
   background: var(--bg-elev);
   border-right: 1px solid var(--border);
   min-height: 0;
@@ -237,16 +238,10 @@ body {
   }
 }
 
-/* Uygulama olarak açıldığında (PWA) çentik/durum çubuğu altında kalmasın */
-@media (display-mode: standalone) {
-  .topbar {
-    height: calc(56px + env(safe-area-inset-top));
-    padding-top: env(safe-area-inset-top);
-  }
-
-  .sidebar {
-    padding-top: calc(14px + env(safe-area-inset-top));
-  }
+/* Çentikli telefonlarda (özellikle uygulama modunda) üst bar ve menü durum çubuğunun altında kalmasın.
+   env() çentik yoksa 0 döner, yani diğer cihazları etkilemez. */
+.side-lang {
+  color: var(--text-2) !important;
 }
 
 .install-link {
@@ -360,8 +355,8 @@ body {
   display: flex;
   align-items: center;
   gap: 6px;
-  height: 56px;
-  padding: 0 14px;
+  height: calc(56px + env(safe-area-inset-top));
+  padding: env(safe-area-inset-top) 14px 0;
   flex-shrink: 0;
   background: color-mix(in srgb, var(--bg) 70%, transparent);
   backdrop-filter: saturate(160%) blur(14px);
@@ -1398,13 +1393,40 @@ body {
     display: none;
   }
 
-  .topbar {
-    padding: 0 8px;
+  /* Mobil: web tarzı üst bar yok; sadece iki büyük, uygulama hissi veren buton */
+  .topbar,
+  .app.is-scrolled .topbar {
+    height: calc(64px + env(safe-area-inset-top));
+    padding-left: 12px;
+    padding-right: 12px;
+    background: transparent;
+    border-bottom-color: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    justify-content: space-between;
   }
 
   .topbar-title {
-    text-align: center;
-    margin: 0 auto;
+    display: none;
+  }
+
+  .topbar .icon-btn {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+  }
+
+  .topbar .icon-btn svg {
+    width: 23px;
+    height: 23px;
+  }
+
+  .topbar .icon-btn:active {
+    transform: scale(0.94);
+    background: var(--surface-2);
   }
 
   .messages {
@@ -1412,7 +1434,12 @@ body {
   }
 
   .composer-dock {
-    padding: 0 12px max(10px, env(safe-area-inset-bottom));
+    padding: 0 12px max(8px, env(safe-area-inset-bottom));
+  }
+
+  /* Mobilde yazı kutusunun altındaki boşluğu azalt: uyarı notu masaüstünde kalsın */
+  .disclaimer {
+    display: none;
   }
 
   .suggestions {

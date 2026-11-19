@@ -1,0 +1,84 @@
+{% extends "_site.html" %}
+{% set page_title = "Privacy Policy" %}
+{% set page_description = "CodeVocab privacy policy. No personal data is collected; chats are stored only in your browser." %}
+
+{% block content %}
+<section class="page-hero">
+  <div class="shell">
+    <span class="pill"><span class="pill-dot"></span>Legal</span>
+    <h1>Privacy Policy</h1>
+    <p class="lead">In short: no account, no personal data collected, your chats stay in your own browser.</p>
+    <p class="page-meta">Last updated: November 2026</p>
+  </div>
+</section>
+
+<div class="shell doc">
+  <aside class="toc" aria-label="Contents">
+    <p>On this page</p>
+    <ol id="toc-list"></ol>
+  </aside>
+
+  <article class="prose">
+    <h2>1. Data controller and nature of the project</h2>
+    <p>
+      CodeVocab is designed by the developer whyasaf as a portfolio project. Its main goal is to modernise language
+      learning with AI. It has no commercial data-processing purpose.
+    </p>
+
+    <h2>2. No processing of personal data</h2>
+    <p>
+      CodeVocab does not ask for or collect directly identifying data such as your name, email address or phone number.
+      There is no sign-up.
+    </p>
+    <p>
+      To prevent abuse of the free AI quotas, the requesting IP address and the time of the request are kept
+      <strong>only in server memory for at most 1 hour</strong>. This information is never written to a database or
+      file, is not used for anything else, and is deleted automatically when the time is up.
+    </p>
+    <p>
+      A cookie named <code>cv_app</code> remembers that you have opened the app before. It does not identify you; it is
+      only used to take you straight to the app when you visit the home page. A cookie named <code>cv_lang</code>
+      remembers your language choice.
+    </p>
+
+    <h2>3. Local storage</h2>
+    <p>
+      Your chat history, learned words and theme preference are never sent to our servers. They are stored only on your
+      device, in your browser's "LocalStorage".
+    </p>
+    <ul>
+      <li>
+        <strong>You are in control:</strong> you can delete a chat from the sidebar, or remove all your progress by
+        clearing your browser data. The developer has no access to this data.
+      </li>
+    </ul>
+
+    <h2>4. AI and API integration</h2>
+    <p>
+      The text you write for checking and the words you look up are sent in real time to one of the third-party AI
+      providers (Groq, Google Gemini or OpenRouter). When you continue a chat, the last few messages of the same chat
+      are included for context. The CodeVocab server does not store this text.
+    </p>
+    <div class="callout warn">
+      <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 9v4M12 17h.01" /><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" /></svg>
+      <p>
+        <strong>Important:</strong> the privacy of text shared with the AI is subject to the provider's own data
+        policies. Never type passwords, private conversations or sensitive personal data into the app.
+      </p>
+    </div>
+
+    <h2>5. Cookies</h2>
+    <p>
+      CodeVocab does not use third-party cookies for advertising or tracking. Only local storage and the two functional
+      cookies described above (<code>cv_app</code> and <code>cv_lang</code>) are used.
+    </p>
+
+    <h2>6. Contact</h2>
+    <p>
+      For questions or feedback about this policy, you can reach the developer via the project's
+      <a href="https://github.com/whyasaf/CodeVocab" target="_blank" rel="noopener">GitHub page</a> or at
+      <a href="https://whyasaf.com" target="_blank" rel="noopener">whyasaf.com</a>.
+    </p>
+  </article>
+</div>
+{% endblock %}

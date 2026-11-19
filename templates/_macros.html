@@ -16,7 +16,7 @@
 <link rel="canonical" href="{{ page_url }}" />
 <meta property="og:type" content="website" />
 <meta property="og:site_name" content="CodeVocab" />
-<meta property="og:locale" content="tr_TR" />
+<meta property="og:locale" content="{{ 'en_US' if lang == 'en' else 'tr_TR' }}" />
 <meta property="og:url" content="{{ page_url }}" />
 <meta property="og:title" content="{{ title }}" />
 <meta property="og:description" content="{{ description }}" />
@@ -34,7 +34,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes" />
 <meta name="mobile-web-app-capable" content="yes" />
 <meta name="apple-mobile-web-app-title" content="CodeVocab" />
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black" />
 <script>
   if ("serviceWorker" in navigator) {
     addEventListener("load", function () { navigator.serviceWorker.register("/sw.js").catch(function () {}); });
@@ -42,7 +42,9 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" rel="stylesheet" />
+{# Font CSS'i sayfanın çizilmesini bekletmesin (siyah ekranın sebebi buydu): önce sistem fontu, sonra Geist #}
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" onload="this.onload=null;this.rel='stylesheet'" />
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@300;400;500;600;700&family=Geist+Mono:wght@400;500&display=swap" /></noscript>
 <link rel="stylesheet" href="{{ url_for('static', filename='base.css') }}" />
 <script>
   // Tema seçimini sayfa çizilmeden uygula (yanıp sönmeyi önler)

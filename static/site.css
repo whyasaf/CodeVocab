@@ -69,6 +69,28 @@ body {
   margin-top: 2px;
 }
 
+.lang-switch {
+  display: inline-grid;
+  place-items: center;
+  height: 34px;
+  min-width: 38px;
+  padding: 0 10px;
+  margin-right: 2px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-family: "Geist Mono", monospace;
+  font-size: 12px;
+  letter-spacing: 0.04em;
+  color: var(--text-2);
+  text-decoration: none;
+  transition: color 0.15s, border-color 0.15s;
+}
+
+.lang-switch:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
 .nav-links {
   display: flex;
   align-items: center;

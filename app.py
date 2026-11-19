@@ -16,6 +16,7 @@ from flask import Flask, Response, jsonify, make_response, redirect, render_temp
 load_dotenv()
 
 from ai import AIUnavailable, active_providers, complete_json  # noqa: E402
+from i18n import LANG_COOKIE, SUPPORTED, get_lang, prompt_for, t, tp  # noqa: E402
 from prompts import (  # noqa: E402
     ANALYZER_SYSTEM_PROMPT,
     TOPIC_QUIZ_USER_TEMPLATE,
@@ -82,7 +83,18 @@ def _cache_headers(resp):
 
 @app.context_processor
 def _site_context():
-    return {"site_url": SITE_URL}
+    return {"site_url": SITE_URL, "t": t, "lang": get_lang()}
+
+
+def render_page(name):
+    """Dil İngilizceyse <name>_en.html varsa onu, yoksa Türkçe şablonu kullan."""
+    if get_lang() == "en":
+        try:
+            return render_template(f"{name}_en.html")
+        except Exception as e:  # şablon yoksa Türkçeye düş
+            if type(e).__name__ != "TemplateNotFound":
+                raise
+    return render_template(f"{name}.html")
 
 
 # ───────────── İstek sınırı ─────────────
@@ -109,7 +121,7 @@ def rate_limited(view):
                 q.popleft()
             for window, limit in RATE_LIMITS:
                 if sum(1 for t in q if now - t <= window) >= limit:
-                    msg = (
+                    msg = tp(
                         "Biraz hızlı gidiyorsun. Bir dakika bekleyip tekrar dene."
                         if window <= 60
                         else "Bu saatlik istek sınırına ulaştın. Biraz ara verip sonra devam edebilirsin."
@@ -155,11 +167,11 @@ def get_db_connection():
 
 def ai_error_response(e: AIUnavailable):
     if e.rate_limited:
-        return jsonify({"error": "Tüm ücretsiz AI kotaları şu an dolu. Bir dakika sonra tekrar dene."}), 429
+        return jsonify({"error": tp("Tüm ücretsiz AI kotaları şu an dolu. Bir dakika sonra tekrar dene.")}), 429
     print(f"[ai] all providers failed: {e}")
     if not active_providers():
-        return jsonify({"error": "Sunucuda AI anahtarı tanımlı değil (.env dosyasını kontrol et)."}), 503
-    return jsonify({"error": "AI şu an yanıt veremiyor. Biraz sonra tekrar dene."}), 503
+        return jsonify({"error": tp("Sunucuda AI anahtarı tanımlı değil (.env dosyasını kontrol et).")}), 503
+    return jsonify({"error": tp("AI şu an yanıt veremiyor. Biraz sonra tekrar dene.")}), 503
 
 
 # ───────────────────────── Pages ─────────────────────────
@@ -177,7 +189,7 @@ def home():
     ref = urlparse(request.referrer or "")
     if request.cookies.get(APP_COOKIE) and ref.netloc != request.host:
         return redirect("/app")
-    return render_template("home.html")
+    return render_page("home")
 
 
 @app.route("/app")
@@ -189,22 +201,36 @@ def chat_app():
 
 @app.route("/about")
 def about():
-    return render_template("about.html")
+    return render_page("about")
 
 
 @app.route("/privacy")
 def privacy():
-    return render_template("privacy.html")
+    return render_page("privacy")
 
 
 @app.route("/terms")
 def terms():
-    return render_template("terms.html")
+    return render_page("terms")
 
 
 @app.route("/guide")
 def guide():
-    return render_template("guide.html")
+    return render_page("guide")
+
+
+@app.route("/lang/<code>")
+def set_lang(code):
+    """Dil değiştir: çerezi yaz ve geldiği sayfaya dön."""
+    ref = urlparse(request.referrer or "")
+    same = ref.netloc == request.host
+    back = (ref.path or "/") if same else "/"
+    if same and ref.query:
+        back += "?" + ref.query
+    resp = redirect(back)
+    if code in SUPPORTED:
+        resp.set_cookie(LANG_COOKIE, code, max_age=60 * 60 * 24 * 365, samesite="Lax")
+    return resp
 
 
 @app.route("/sw.js")
@@ -266,7 +292,7 @@ def get_random_words():
         return jsonify(words)
     except sqlite3.Error as e:
         print(f"[db] {e}")
-        return jsonify({"error": "Kelime listesi okunamadı."}), 500
+        return jsonify({"error": tp("Kelime listesi okunamadı.")}), 500
 
 
 @app.route("/api/word_details")
@@ -274,15 +300,16 @@ def get_random_words():
 def word_details():
     word = (request.args.get("word") or "").strip().lower()
     if not word or not WORD_RE.match(word):
-        return jsonify({"error": "Geçerli bir İngilizce kelime gir."}), 400
+        return jsonify({"error": tp("Geçerli bir İngilizce kelime gir.")}), 400
 
-    cached = word_cache.get(word)
+    cache_key = f"{get_lang()}:{word}"
+    cached = word_cache.get(cache_key)
     if cached:
         return jsonify(cached)
 
     try:
         data, provider = complete_json(
-            WORD_SYSTEM_PROMPT,
+            prompt_for(WORD_SYSTEM_PROMPT),
             [{"role": "user", "content": WORD_USER_TEMPLATE.format(word=word)}],
             temperature=0.3,
             max_tokens=1500,
@@ -301,7 +328,7 @@ def word_details():
         "tip": str(data.get("tip") or ""),
         "provider": provider,
     }
-    word_cache.put(word, result)
+    word_cache.put(cache_key, result)
     return jsonify(result)
 
 
@@ -328,16 +355,16 @@ def analyze():
     text = str(data.get("text", "")).strip()
 
     if not text:
-        return jsonify({"error": "Boş mesaj gönderilemez."}), 400
+        return jsonify({"error": tp("Boş mesaj gönderilemez.")}), 400
     if len(text) > MAX_TEXT_LEN:
-        return jsonify({"error": f"Mesaj çok uzun (en fazla {MAX_TEXT_LEN} karakter)."}), 400
+        return jsonify({"error": tp("Mesaj çok uzun (en fazla {n} karakter).", n=MAX_TEXT_LEN)}), 400
 
     messages = _clean_history(data.get("history"))
     messages.append({"role": "user", "content": text})
 
     try:
         result, provider = complete_json(
-            ANALYZER_SYSTEM_PROMPT, messages, temperature=0.3, max_tokens=1500
+            prompt_for(ANALYZER_SYSTEM_PROMPT), messages, temperature=0.3, max_tokens=1500
         )
     except AIUnavailable as e:
         return ai_error_response(e)
@@ -346,16 +373,16 @@ def analyze():
     if kind == "reply" or ("text" in result and "score" not in result):
         reply = str(result.get("text") or "").strip()
         if not reply:
-            return jsonify({"error": "Model boş yanıt döndürdü."}), 502
+            return jsonify({"error": tp("Model boş yanıt döndürdü.")}), 502
         return jsonify({"status": "success", "type": "reply", "data": {"text": reply}, "provider": provider})
 
     missing = {"score", "corrected_sentence", "explanation"} - result.keys()
     if missing:
-        return jsonify({"error": "Model eksik yanıt döndürdü, tekrar dene."}), 502
+        return jsonify({"error": tp("Model eksik yanıt döndürdü, tekrar dene.")}), 502
     try:
         score = max(0, min(100, int(float(result["score"]))))
     except (TypeError, ValueError):
-        return jsonify({"error": "Model geçersiz puan döndürdü, tekrar dene."}), 502
+        return jsonify({"error": tp("Model geçersiz puan döndürdü, tekrar dene.")}), 502
 
     payload = {
         "score": score,
@@ -555,7 +582,7 @@ def _review(topic, data, written_by):
     others = [p.name for p in active_providers() if p.name != written_by and p.name not in LESSON_EXCLUDE]
     try:
         rev, reviewer = complete_json(
-            TOPIC_REVIEW_SYSTEM_PROMPT,
+            prompt_for(TOPIC_REVIEW_SYSTEM_PROMPT),
             [{"role": "user", "content": TOPIC_REVIEW_USER_TEMPLATE.format(
                 topic=topic, content=json.dumps(content, ensure_ascii=False))}],
             temperature=0.1,
@@ -621,9 +648,9 @@ def _read_topic():
     data = request.get_json(silent=True) or {}
     topic = " ".join(str(data.get("topic", "")).split())
     if not topic:
-        return None, (jsonify({"error": "Bir konu yaz (ör. present perfect)."}), 400)
+        return None, (jsonify({"error": tp("Bir konu yaz (ör. present perfect).")}), 400)
     if len(topic) > MAX_TOPIC_LEN:
-        return None, (jsonify({"error": f"Konu adı çok uzun (en fazla {MAX_TOPIC_LEN} karakter)."}), 400)
+        return None, (jsonify({"error": tp("Konu adı çok uzun (en fazla {n} karakter).", n=MAX_TOPIC_LEN)}), 400)
     return topic, None
 
 
@@ -634,14 +661,14 @@ def topic_lesson():
     if err:
         return err
 
-    key = topic.lower()
+    key = f"{get_lang()}:{topic.lower()}"
     cached = topic_cache.get(key)
     if cached:
         return jsonify(cached)
 
     try:
         data, provider = complete_json(
-            TOPIC_SYSTEM_PROMPT,
+            prompt_for(TOPIC_SYSTEM_PROMPT),
             [{"role": "user", "content": TOPIC_USER_TEMPLATE.format(topic=topic)}],
             temperature=0.4,
             # Ölçüm: prompt ≈ 3400 token, yanıt ≈ 1700-3600 (modelin "düşünme" token'ları dahil).
@@ -655,22 +682,22 @@ def topic_lesson():
         return ai_error_response(e)
 
     if data.get("type") == "invalid":
-        msg = _s(data.get("message")) or "Bu bir İngilizce konusu gibi görünmüyor. Ör: present perfect, articles, conditionals."
+        msg = _s(data.get("message")) or tp("Bu bir İngilizce konusu gibi görünmüyor. Ör: present perfect, articles, conditionals.")
         return jsonify({"error": msg}), 422
 
     data, reviewed = _review(_s(data.get("topic"), 80) or topic, data, provider)
     if not reviewed:
         # Denetlenmemiş ders gösterilmez: yanlış bilgi öğretmektense beklemek daha iyi.
-        return jsonify({"error": "Ders hazırlandı ama denetlenemedi (AI kotaları yoğun). Birkaç saniye sonra tekrar dene."}), 503
+        return jsonify({"error": tp("Ders hazırlandı ama denetlenemedi (AI kotaları yoğun). Birkaç saniye sonra tekrar dene.")}), 503
     lesson = _clean_lesson(data)
     quiz = _clean_quiz(data.get("quiz"))
     if not lesson["topic"] or not lesson["summary"] or not lesson["uses"] or not quiz:
-        return jsonify({"error": "Ders tam oluşturulamadı, tekrar dene."}), 502
+        return jsonify({"error": tp("Ders tam oluşturulamadı, tekrar dene.")}), 502
 
     result = {"lesson": lesson, "quiz": quiz, "provider": provider, "reviewed": True}
     topic_cache.put(key, result)
     # Normalize edilmiş adla da önbelleğe al (ör. "present perfekt" → "Present Perfect")
-    topic_cache.put(lesson["topic"].lower(), result)
+    topic_cache.put(f"{get_lang()}:{lesson['topic'].lower()}", result)
     return jsonify(result)
 
 
@@ -687,7 +714,7 @@ def topic_quiz():
 
     try:
         result, provider = complete_json(
-            TOPIC_SYSTEM_PROMPT,
+            prompt_for(TOPIC_SYSTEM_PROMPT),
             [{"role": "user", "content": TOPIC_QUIZ_USER_TEMPLATE.format(topic=topic, previous=prev_text)}],
             temperature=0.8,
             max_tokens=2200,
@@ -700,10 +727,10 @@ def topic_quiz():
 
     result, reviewed = _review(topic, {"quiz": result.get("quiz")}, provider)
     if not reviewed:
-        return jsonify({"error": "Sorular hazırlandı ama denetlenemedi. Birkaç saniye sonra tekrar dene."}), 503
+        return jsonify({"error": tp("Sorular hazırlandı ama denetlenemedi. Birkaç saniye sonra tekrar dene.")}), 503
     quiz = _clean_quiz(result.get("quiz"))
     if not quiz:
-        return jsonify({"error": "Yeni sorular oluşturulamadı, tekrar dene."}), 502
+        return jsonify({"error": tp("Yeni sorular oluşturulamadı, tekrar dene.")}), 502
     return jsonify({"topic": topic, "quiz": quiz, "provider": provider})
 
 
