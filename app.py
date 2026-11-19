@@ -227,6 +227,9 @@ def set_lang(code):
     back = (ref.path or "/") if same else "/"
     if same and ref.query:
         back += "?" + ref.query
+    elif back == "/app":
+        # Önbellekteki eski dildeki kabuk yerine yeni dildeki sayfa ağdan gelsin (bkz. sw.js)
+        back += f"?l={code}"
     resp = redirect(back)
     if code in SUPPORTED:
         resp.set_cookie(LANG_COOKIE, code, max_age=60 * 60 * 24 * 365, samesite="Lax")

@@ -1545,7 +1545,9 @@
   updateInstallButton();
   setMode("analyze");
   renderAll();
-  requestAnimationFrame(() => $("#splash")?.classList.remove("is-on"));
+  // Yükleme ekranı en az 0,5 sn görünsün (uygulama önbellekten anında açılsa bile logo görünsün)
+  const SPLASH_MIN_MS = 500;
+  setTimeout(() => $("#splash")?.classList.remove("is-on"), Math.max(0, SPLASH_MIN_MS - performance.now()));
 
   // Bağlantıdan gelenler: /app?q=cümle (hemen analiz), /app?mode=vocab|chat|topic
   const params = new URLSearchParams(location.search);
